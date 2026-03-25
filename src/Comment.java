@@ -4,13 +4,15 @@ package src;
 
 public class Comment {
 
+    private int commentId;
     private User author;
     private Post parentPost;
     private String textContent;
     private int likesCount;
     private int dislikeCount;
 
-    public Comment(User author, Post parentPost, String textContent) {
+    public Comment(int commentId, User author, Post parentPost, String textContent) {
+        this.commentId = commentId;
         this.author = author;
         this.parentPost = parentPost;
         this.textContent = textContent;
@@ -56,5 +58,13 @@ public class Comment {
 
     public void setDislikeCount(int dislikeCount) {
         this.dislikeCount = dislikeCount;
+    }
+
+    public int getCommentId() {
+        return commentId;
+    }
+
+    public void setCommentId(int commentId) {
+        this.commentId = commentId;
     }
 }
