@@ -1,9 +1,8 @@
 // Written by Kyle Flatt
+// Refactored to delegate logic to the Service layer
 
 package src;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,113 +10,35 @@ import java.util.List;
  */
 public class SearchController {
 
+    // The controller needs a reference to the Service layer
+    private Service service;
+
+    // Constructor to inject the shared Service instance
+    public SearchController(Service service) {
+        this.service = service;
+    }
+
     /**
-     * Searches communities by name and prints results to console
+     * Searches communities by name by delegating to the Service layer.
      */
     public void searchCommunitiesByName(String nameQuery) {
-
-        // SQL query to find communities with names matching the search
-        String query = "SELECT * FROM communities WHERE name LIKE ?";
-
-        try (
-            // Get database connection from singleton
-            Connection conn = DatabaseConnection.getInstance().getConnection();
-
-            // Prepare the SQL statement
-            PreparedStatement stmt = conn.prepareStatement(query)
-        ) {
-
-            // Replace ? with user input (with wildcards for partial match)
-            stmt.setString(1, "%" + nameQuery + "%");
-
-            // Execute query and store results
-            ResultSet rs = stmt.executeQuery();
-
-            // Loop through results and print each community name
-            while (rs.next()) {
-                String name = rs.getString("name");
-                System.out.println("Found community: " + name);
-            }
-
-        } catch (SQLException e) {
-            // Handle database errors
-            e.printStackTrace();
-        }
+        // The Service layer now handles the DB call and the printing
+        service.searchCommunitiesByName(nameQuery);
     }
 
     /**
-     * Returns a list of communities that match the search term
+     * Filters a list of communities by genre. 
+     * (Replaced findCommunity to match the UML diagram exactly)
      */
-    public List<Community> findCommunity(String searchTerm) {
-
-        // List to store results
-        List<Community> results = new ArrayList<>();
-
-        // SQL query for searching communities
-        String query = "SELECT * FROM communities WHERE name LIKE ?";
-
-        try (
-            Connection conn = DatabaseConnection.getInstance().getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query)
-        ) {
-
-            // Insert search term into query
-            stmt.setString(1, "%" + searchTerm + "%");
-
-            ResultSet rs = stmt.executeQuery();
-
-            // Convert each database row into a Community object
-            while (rs.next()) {
-                Community c = new Community();
-
-                // Map database column to object field
-                c.setName(rs.getString("name"));
-
-                results.add(c);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return results;
+    public void filterCommunitySearchByGenre(List<Community> communities, String genre) {
+        service.filterCommunitySearchByGenre(communities, genre);
     }
 
     /**
-     * Retrieves all posts made by a specific user
+     * Retrieves all posts made by a specific user.
      */
     public List<Post> retrieveUserPosts(User user) {
-
-        // List to store posts
-        List<Post> posts = new ArrayList<>();
-
-        // SQL query to get posts by user id
-        String query = "SELECT * FROM posts WHERE author_id = ?";
-
-        try (
-            Connection conn = DatabaseConnection.getInstance().getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query)
-        ) {
-
-            // Set the user ID in the query
-            stmt.setInt(1, user.getId());
-
-            ResultSet rs = stmt.executeQuery();
-
-            // Convert each row into a Post object
-            while (rs.next()) {
-                Post p = new Post();
-
-                // Map database column to object field
-                p.setContent(rs.getString("content"));
-
-                posts.add(p);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return posts;
+        // Delegate the database fetch to the Service layer
+        return service.retrieveUserPosts(user);
     }
 }
