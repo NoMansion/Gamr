@@ -19,7 +19,6 @@ public class User{
     private List<User> incomingFriendRequests;
     private List<Group> joinedGroups;
     private List<Post> posts;
-    private boolean loggedIn;
 
     public User(String username, String email, String passwordHash, int age, List<String> games){
         this.username = username;
@@ -35,7 +34,6 @@ public class User{
         this.incomingFriendRequests = new ArrayList<>();
         this.joinedGroups = new ArrayList<>();
         this.posts = new ArrayList<>();
-        this.loggedIn = false;
     }
     // Getters
     public String getUsername(){
@@ -62,8 +60,6 @@ public class User{
         return joinedGroups;
     }public List<Post> getPosts(){
         return posts;
-    }public boolean isLoggedIn(){
-        return loggedIn;
     }
     //Setters
     public void setBio(String bio){
