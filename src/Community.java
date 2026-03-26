@@ -1,0 +1,37 @@
+public class Community
+{
+    private String name;
+    private List<String> genres;
+    private List<User> members;
+    private List<Post> communityPosts;
+
+    public Community(String name, List<String> genres, List<User> members, List<Post> communityPosts)
+    {
+        this.name = name;
+        this.genres = new ArrayList<>();
+        this.members = new ArrayList<>();
+        this.communityPosts = new ArrayList<>();
+    }
+
+    //Getters and setters will be implemented later.
+
+    public addMember(User user)
+    {
+        this.members.add(user);
+    }
+
+    public createPost(User author, String textContent)
+    {
+        this.communityPosts.add(Post(author, this.Community, textContent, 0, 0, List<Comment> comments))
+    }
+
+    public likePost(Post post)
+    {
+        post.likeCount++;
+    }
+
+    public dislikePost(Post post)
+    {
+        post.dislikeCount++;
+    }
+}
