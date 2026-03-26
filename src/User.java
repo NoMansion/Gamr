@@ -21,7 +21,8 @@ public class User{
     private List<Group> joinedGroups;
     private List<Post> posts;
 
-    public User(String username, String email, String passwordHash, int age, List<String> games){
+    public User(int userID, String username, String email, String passwordHash, int age, List<String> games){
+        this.userID = userID;
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -37,7 +38,9 @@ public class User{
         this.posts = new ArrayList<>();
     }
     // Getters
-    public String getUsername(){
+    public int getUserID(){
+        return userID;
+    }public String getUsername(){
         return username;
     }public String getEmail(){
         return email;
