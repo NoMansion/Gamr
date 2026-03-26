@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class User{
+    private int userID;
     private String username;
     private String email;
     private String passwordHash;
