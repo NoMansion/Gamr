@@ -1,12 +1,14 @@
 public class Community
 {
+    private int communityID;
     private String name;
     private List<String> genres;
     private List<User> members;
     private List<Post> communityPosts;
 
-    public Community(String name, List<String> genres, List<User> members, List<Post> communityPosts)
+    public Community(int communityID, String name, List<String> genres, List<User> members, List<Post> communityPosts)
     {
+        this.communityID = communityID;
         this.name = name;
         this.genres = new ArrayList<>();
         this.members = new ArrayList<>();
