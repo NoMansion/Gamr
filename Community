@@ -101,7 +101,4 @@ public class Community
     {
         this.communityPosts = communityPosts;
     }
-
-    //Methods to implement
-    public 
 }
