@@ -1,3 +1,4 @@
+package src;
 public class Post
 {
     private User author;
@@ -7,6 +8,16 @@ public class Post
     private int dislikeCount;
     private List<Comment> comments;
 
+    /**
+     * Creates a new Post object. (For when a new post is made)
+     * 
+     * @param author Writer of the post.
+     * @param community The community the post is submitted under.
+     * @param textContent What the author writes to be in the post.
+     * @param likeCount Amount of likes the post has.
+     * @param dislikeCount Amount of dislikes the post has.
+     * @param comments List of comments made in the Post.
+     */
     public Post(User author, Community community, String textContent, int likeCount, int dislikeCount, List<Comment> comments)
     {
         this.author = author;
@@ -15,22 +26,17 @@ public class Post
         this.likeCount = likeCount;
         this.dislikeCount = dislikeCount;
         this.comments = new ArrayList<>();
-    }
+    } 
 
-    //Getters and setters will be implemented later.
-
-    public createComment(User author, String textContent)
+    /**
+     *Appends a new comment object into the list of comments in the Post object. 
+     * 
+     * @param author Writer of the comment.
+     * @param textContent What the author writes to be in the comment.
+     */
+    public void createComment(User author, String textContent)
     {
-        this.comments.add(Comment(author, parentPost, textContent, 0, 0));
-    }
-
-    public likeComment()
-    {
-        this.likeCount++;
-    }
-
-    public dislikeComment()
-    {
-        this.dislikeCount++;
+        Comment newComment = new Comment(author, this, textContent);
+        this.comments.add(newComment);
     }
 }
