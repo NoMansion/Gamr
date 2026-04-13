@@ -9,11 +9,16 @@ public class Service {
     private DBOperation dbOp;
     private User currentUser;
 
-    public Service() {
-        this.dbOp = new DBOperation();
+    // Inject the DBOperation dependency through the constructor
+    public Service(DBOperation dbOp) {
+        this.dbOp = dbOp;
         this.currentUser = null;
     }
-
+    
+    // You can also add a setter for currentUser so you can update it after login
+    public void setCurrentUser(User currentUser) {
+        this.currentUser = currentUser;
+    }
     // ==========================================
     // 1. ACCOUNT MANAGEMENT & AUTHENTICATION
     // ==========================================
@@ -85,12 +90,12 @@ public class Service {
     // ==========================================
 
     public void sendFriendRequest(User sender, User receiver) {
-        boolean success = dbOp.insertFriendRequest(sender.getUserID(), receiver.getUserID());
+        boolean success = dbOp.insertFriendRequest(sender.getUserId(), receiver.getUserId());
         if (success) System.out.println("Friend request sent to " + receiver.getUsername());
     }
 
     public void acceptFriendRequest(User user, User sender) {
-        boolean success = dbOp.insertFriendship(user.getUserID(), sender.getUserID());
+        boolean success = dbOp.insertFriendship(user.getUserId(), sender.getUserId());
         if (success) System.out.println("Friend request accepted from " + sender.getUsername());
     }
 
@@ -100,7 +105,7 @@ public class Service {
     }
 
     public void unaddFriend(User user, User friendToRemove) {
-        boolean success = dbOp.deleteFriendship(user.getUserID(), friendToRemove.getUserID());
+        boolean success = dbOp.deleteFriendship(user.getUserId(), friendToRemove.getUserId());
         if (success) System.out.println("Removed friend: " + friendToRemove.getUsername());
     }
 
@@ -148,24 +153,20 @@ public class Service {
     }
 
     public void sendEmailPingToGroup(User sender, Group group) {
-        System.out.println("Ping! " + sender.getUsername() + " notified everyone in group ID: " + group.getGroupID());
+        System.out.println("Ping! " + sender.getUsername() + " notified everyone in group ID: " + group.getGroupId());
     }
 
     // ==========================================
     // 5. POSTS & COMMENTS
     // ==========================================
 
-    public void createPost(User author, String textContent) {
-        Post newPost = new Post();
-        newPost.setAuthor(author);
-        newPost.setTextContent(textContent);
-        newPost.setLikeCount(0);
-        newPost.setDislikeCount(0);
+    public void createPost(Community community, User author, String textContent) {
+        Post newPost = new Post(-1, author, community, textContent, 0, 0, new ArrayList<>());
         dbOp.insertPost(newPost);
     }
 
     public List<Post> retrieveUserPosts(User user) {
-        return dbOp.getPostsByUserId(user.getUserID());
+        return dbOp.getPostsByUserId(user.getUserId());
     }
 
     // Note: Added Post parameter so the service knows what to like
@@ -183,21 +184,19 @@ public class Service {
     }
 
     // Note: Added Post parameter so the DB can link the comment
-    public void createComment(User author, String textContent, Post parentPost) {
-        Comment comment = new Comment();
-        comment.setAuthor(author);
-        comment.setTextContent(textContent);
+    public void createComment(Post parentPost, User author, String textContent) {
+        Comment comment = new Comment(-1, author, parentPost, textContent);
         dbOp.insertComment(comment, parentPost.getPostID());
     }
 
     // Note: Added Comment parameter
     public void likeComment(Comment comment) {
-        dbOp.updateCommentVotes(comment.getCommentID(), true);
+        dbOp.updateCommentVotes(comment.getCommentId(), true);
     }
 
     // Note: Added Comment parameter
     public void dislikeComment(Comment comment) {
-        dbOp.updateCommentVotes(comment.getCommentID(), false);
+        dbOp.updateCommentVotes(comment.getCommentId(), false);
     }
 
     // ==========================================

@@ -235,11 +235,18 @@ public class SQLOperation implements DBOperation {
             pstmt.setInt(1, authorId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Post post = new Post();
-                    post.setPostID(rs.getInt("post_id"));
-                    post.setTextContent(rs.getString("text_content"));
-                    post.setLikeCount(rs.getInt("likes_count"));
-                    post.setDislikeCount(rs.getInt("dislikes_count"));
+                    User author = new User();
+                    author.setUserId(rs.getInt("author_id"));
+                    
+                    Post post = new Post(
+                        rs.getInt("post_id"),
+                        author,
+                        null,
+                        rs.getString("text_content"),
+                        rs.getInt("likes_count"),
+                        rs.getInt("dislikes_count"),
+                        new ArrayList<>()
+                    );
                     posts.add(post);
                 }
             }
@@ -280,7 +287,7 @@ public class SQLOperation implements DBOperation {
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        comment.setCommentID(generatedKeys.getInt(1));
+                        comment.setCommentId(generatedKeys.getInt(1));
                     }
                 }
                 return true;
