@@ -1,0 +1,13 @@
+# Ignore database credentials
+config.properties
+
+# Ignore compiled Java class files
+*.class
+/bin/
+/out/
+/target/
+
+# Ignore IDE specific folders
+.vscode/
+.idea/
+*.iml
