@@ -6,4 +6,3 @@ After downloading, please add a config.properties file in order for database con
 
 - db.url=jdbc:oracle:our:connection:URL
 - db.username=our_username
-- db.password=our_password

@@ -1,5 +1,8 @@
 package src;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class Community
 {
     private int communityID;
@@ -19,23 +22,31 @@ public class Community
 
     //Getters and setters will be implemented later.
 
-    public addMember(User user)
+    public List<String> getGenres() {
+        return genres;
+    }
+
+    public void setGenres(List<String> genres) {
+        this.genres = genres;
+    }
+
+    public void addMember(User user)
     {
         this.members.add(user);
     }
 
-    public createPost(User author, String textContent)
+    public void createPost(int postId, User author, String textContent)
     {
-        this.communityPosts.add(Post(author, this.Community, textContent, 0, 0, List<Comment> comments))
+        this.communityPosts.add(new Post(postId, author, this, textContent, 0, 0, new ArrayList<>()));
     }
 
-    public likePost(Post post)
+    public void likePost(Post post)
     {
-        post.likeCount++;
+        post.setLikeCount(post.getLikeCount() + 1);
     }
 
-    public dislikePost(Post post)
+    public void dislikePost(Post post)
     {
-        post.dislikeCount++;
+        post.setDislikeCount(post.getDislikeCount() + 1);
     }
 }

@@ -24,10 +24,50 @@ public class Post
         this.comments = new ArrayList<>();
     }
 
-    //Getters and setters will be implemented later.
-
-    public createComment(User author, String textContent)
+    public Comment createComment(int ID, User author, String textContent)
     {
-        this.comments.add(Comment(author, parentPost, textContent, 0, 0));
+        Comment comment = new Comment(ID, author, this, textContent);
+        this.comments.add(comment);
+        return comment;
+    }
+
+    public int getPostID() {
+        return postID;
+    }
+
+    public void setPostID(int postID) {
+        this.postID = postID;
+    }
+
+    public User getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(User author) {
+        this.author = author;
+    }
+
+    public String getTextContent() {
+        return textContent;
+    }
+
+    public void setTextContent(String textContent) {
+        this.textContent = textContent;
+    }
+
+    public int getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public int getDislikeCount() {
+        return dislikeCount;
+    }
+
+    public void setDislikeCount(int dislikeCount) {
+        this.dislikeCount = dislikeCount;
     }
 }

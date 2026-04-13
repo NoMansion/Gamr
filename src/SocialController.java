@@ -5,106 +5,110 @@ package src;
 import java.util.List;
 
 public class SocialController {
-	// No instance variables because this is a controller class
-	
-	public static void sendFriendRequest(User sender, User receiver) {
-		
+	private Service service;
+
+	// Constructor to inject the shared Service instance
+	public SocialController(Service service) {
+		this.service = service;
 	}
-	
-	public static void skipAccount(User viewer, User viewAccount) {
-		
+
+	public void sendFriendRequest(User sender, User receiver) {
+		service.sendFriendRequest(sender, receiver);
 	}
-	
-	public static void acceptFriendRequest(User user, User sender) {
-		
+
+	public void skipAccount(User viewer, User viewAccount) {
+		service.skipAccount(viewer, viewAccount);
 	}
-	
-	public static void declineFriendRequest(User user, User sender) {
-		
+
+	public void acceptFriendRequest(User user, User sender) {
+		service.acceptFriendRequest(user, sender);
 	}
-	
-	public static void unaddFriend(User user, User friendToRemove) {
-		
+
+	public void declineFriendRequest(User user, User sender) {
+		service.declineFriendRequest(user, sender);
 	}
-	
-	public static List<User> retrieveMutualFriends(User user1, User user2){
-		
+
+	public void unaddFriend(User user, User friendToRemove) {
+		service.unaddFriend(user, friendToRemove);
 	}
-	
-	public static List<User> retrieveFriendRecommendations(User user){
-		
+
+	public List<User> retrieveMutualFriends(User user1, User user2) {
+		return service.retrieveMutualFriends(user1, user2);
 	}
-	
-	public static List<User> filterRecommendationsByAge(List<User> recommendations, int targetAge){
-		
+
+	public List<User> retrieveFriendRecommendations(User user) {
+		return service.retrieveFriendRecommendations(user);
 	}
-	
-	public static List<User> filterRecommendationsByGenre(List<User> recommendations, String genre){
-		
+
+	public List<User> filterRecommendationsByAge(List<User> recommendations, int targetAge) {
+		return service.filterRecommendationsByAge(recommendations, targetAge);
 	}
-	
-	public static List<User> filterRecommendationsByGame(List<User> recommendations, String game){
-		
+
+	public List<User> filterRecommendationsByGenre(List<User> recommendations, String genre) {
+		return service.filterRecommendationsByGenre(recommendations, genre);
 	}
-	
-	public static void sendEmailPingToFriend(User sender, User friend) {
-		
+
+	public List<User> filterRecommendationsByGame(List<User> recommendations, String game) {
+		return service.filterRecommendationsByGame(recommendations, game);
 	}
-	
-	public static void sendEmailPingToGroup(User sender, Group group) {
-		
+
+	public void sendEmailPingToFriend(User sender, User friend) {
+		service.sendEmailPingToFriend(sender, friend);
 	}
-	
-	public static void createAccount(String username, String email, String password, int age, List<String> games) {
-		
+
+	public void sendEmailPingToGroup(User sender, Group group) {
+		service.sendEmailPingToGroup(sender, group);
 	}
-	
-	public static void login(String username, String password) {
-		
+
+	public void createAccount(String username, String email, String password, int age, List<String> games) {
+		service.createAccount(username, email, password, age, games);
 	}
-	
-	public static void logout() {
-		
+
+	public void login(String username, String password) {
+		service.login(username, password);
 	}
-	
-	public static void deleteAccount() {
-		
+
+	public void logout() {
+		service.logout();
 	}
-	
-	public static void updateProfile(String bio, List<String> favoriteGames) {
-		
+
+	public void deleteAccount() {
+		service.deleteAccount();
 	}
-	
-	public static void blockUser(User userToBlock) {
-		
+
+	public void updateProfile(String bio, List<String> favoriteGames) {
+		service.updateProfile(bio, favoriteGames);
 	}
-	
-	public static void addMember(User user) {
-		
+
+	public void blockUser(User userToBlock) {
+		service.blockUser(userToBlock);
 	}
-	
-	public static void createPost(User author, String textContent) {
-		
+
+	public void addMember(User user) {
+		service.addMember(user);
 	}
-	
-	public static Post likePost(Post post) {
-		
+
+	public void createPost(Community community, User author, String textContent) {
+		service.createPost(community, author, textContent);
 	}
-	
-	public static Post dislikePost(Post post) {
-		
+
+	public Post likePost(Post post) {
+		return service.likePost(post);
 	}
-	
-	public static void createComment(User author, String textContent, Post parentPost) {
-		
+
+	public Post dislikePost(Post post) {
+		return service.dislikePost(post);
 	}
-	
-	public static void likeComment(Comment comment) {
-		
+
+	public void createComment(Post parentPost, User author, String textContent) {
+		service.createComment(parentPost, author, textContent);
 	}
-	
-	public static void dislikeComment(Comment comment) {
-		
+
+	public void likeComment(Comment comment) {
+		service.likeComment(comment);
 	}
-	
+
+	public void dislikeComment(Comment comment) {
+		service.dislikeComment(comment);
+	}
 }
