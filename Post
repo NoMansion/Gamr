@@ -29,14 +29,92 @@ public class Post
     } 
 
     /**
-     *Appends a new comment object into the list of comments in the Post object. 
+     * Retrieves the Post objects author.
      * 
-     * @param author Writer of the comment.
-     * @param textContent What the author writes to be in the comment.
+     * @return author
      */
-    public void createComment(User author, String textContent)
+    public User getAuthor()
     {
-        Comment newComment = new Comment(author, this, textContent);
-        this.comments.add(newComment);
+        return author;
+    }
+
+    /**
+     * Retrieves the community the Post object belongs to.
+     * 
+     * @return community
+     */
+    public Community getCommunity()
+    {
+        return community;
+    }
+
+    /**
+     * Retrieves the Post objects text content.
+     * 
+     * @return textContent
+     */
+    public String getTextContent()
+    {
+        return textContent;
+    }
+
+    /**
+     * Retrieves the Post objects like count.
+     * 
+     * @return likeCount
+     */
+    public int getLikeCount()
+    {
+        return likeCount;
+    }
+
+    /**
+     * Retrieves the Post objects dislike count.
+     * 
+     * @return dislikeCount
+     */
+    public int getDisikeCount()
+    {
+        return dislikeCount;
+    }
+
+    /**
+     * Retrieves the Post objects comments in a list.
+     * 
+     * @return comments
+     */
+    public List<Comment> getComments()
+    {
+        return comments;
+    }
+
+    /**
+     * Sets the like count of the post object.
+     * 
+     * @param likeCount
+     */
+    public void setLikeCount(int likeCount)
+    {
+        this.likeCount = likeCount;
+    }
+
+    /**
+     * Sets the dislike count of the post object.
+     * 
+     * @param dislikeCount
+     */
+    public void setDislikeCount(int dislikeCount)
+    {
+        this.dislikeCount = dislikeCount;
+    }
+
+    /**
+     * Sets the comment list of a post obejct.
+     * 
+     * @param comments
+     */
+    public void setComments(List<Comments> comments)
+    {
+        this.comments = comments;
     }
 }
