@@ -54,6 +54,10 @@ public class User {
         return email;
     }
 
+ public String getEmail() {
+        return email;
+    }
+
     public void setEmail(String email) {
         this.email = email;
     }
@@ -87,7 +91,7 @@ public class User {
     }
 
     public void setFavoriteGames(List<String> favoriteGames) {
-        this.favoriteGames = favoriteGames;
+        this.favoriteGames = (favoriteGames != null) ? favoriteGames : new ArrayList<>();
     }
 
     public List<String> getFavoriteGenres() {
@@ -95,7 +99,7 @@ public class User {
     }
 
     public void setFavoriteGenres(List<String> favoriteGenres) {
-        this.favoriteGenres = favoriteGenres;
+        this.favoriteGenres = (favoriteGenres != null) ? favoriteGenres : new ArrayList<>();
     }
 
     public List<User> getFriendsList() {
@@ -103,7 +107,7 @@ public class User {
     }
 
     public void setFriendsList(List<User> friendsList) {
-        this.friendsList = friendsList;
+        this.friendsList = (friendsList != null) ? friendsList : new ArrayList<>();
     }
 
     public List<User> getBlockedUsers() {
@@ -111,7 +115,7 @@ public class User {
     }
 
     public void setBlockedUsers(List<User> blockedUsers) {
-        this.blockedUsers = blockedUsers;
+        this.blockedUsers = (blockedUsers != null) ? blockedUsers : new ArrayList<>();
     }
 
     public List<User> getIncomingFriendRequests() {
@@ -119,7 +123,7 @@ public class User {
     }
 
     public void setIncomingFriendRequests(List<User> incomingFriendRequests) {
-        this.incomingFriendRequests = incomingFriendRequests;
+        this.incomingFriendRequests = (incomingFriendRequests != null) ? incomingFriendRequests : new ArrayList<>();
     }
 
     public List<Group> getJoinedGroups() {
@@ -127,7 +131,7 @@ public class User {
     }
 
     public void setJoinedGroups(List<Group> joinedGroups) {
-        this.joinedGroups = joinedGroups;
+        this.joinedGroups = (joinedGroups != null) ? joinedGroups : new ArrayList<>();
     }
 
     public List<Post> getPosts() {
@@ -135,6 +139,6 @@ public class User {
     }
 
     public void setPosts(List<Post> posts) {
-        this.posts = posts;
+        this.posts = (posts != null) ? posts : new ArrayList<>();
     }
 }
