@@ -21,10 +21,29 @@ public class Group {
     // Methods
     public void addFriendsToGroup(List<User> users) {
         // add given users to the group
+        if(users == null){
+            return;
+        }for(User user : users){
+            if(user != null && !groupMembers.contains(user)){
+                groupMembers.add(user);
+            }
+        }
+    }
+
+    public void addMember(User user){
+        if(user != null && !groupMembers.contains(user)){
+            groupMembers.add(user);
+        }
     }
 
     public void removeMember(User user) {
         // remove user from the group
+        if(user == null){
+            return;
+        }
+        if(groupMembers.conatins(user)){
+            groupMembers.remove(user);
+        }
     }
 
     // getters/setters
@@ -42,5 +61,14 @@ public class Group {
 
     public void setGroupId(int groupId) {
         this.groupId = groupId;
+    }
+
+    public int getGroupSize(){
+        return groupMembers.size();
+    }
+
+    @Override
+    public String toString(){
+        return "Group{"+groupId+"}, group members = "+groupMembers;
     }
 }
