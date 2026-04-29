@@ -29,16 +29,6 @@ public class Post
     } 
 
     /**
-     * Retrieves the Post objects author.
-     * 
-     * @return author
-     */
-    public User getAuthor()
-    {
-        return author;
-    }
-
-    /**
      * Retrieves the community the Post object belongs to.
      * 
      * @return community
