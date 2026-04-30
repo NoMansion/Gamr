@@ -11,6 +11,8 @@ public class Community
     private List<User> members;
     private List<Post> communityPosts;
 
+    public Community(){}
+
     public Community(int communityID, String name, List<String> genres, List<User> members, List<Post> communityPosts)
     {
         this.communityID = communityID;
@@ -19,8 +21,6 @@ public class Community
         this.members = new ArrayList<>();
         this.communityPosts = new ArrayList<>();
     }
-
-    //Getters and setters will be implemented later.
 
     public List<String> getGenres() {
         return genres;
@@ -48,5 +48,25 @@ public class Community
     public void dislikePost(Post post)
     {
         post.setDislikeCount(post.getDislikeCount() + 1);
+    }
+
+    public void setCommunityID(int communityID) {
+        this.communityID = communityID;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setMembers(List<User> members) {
+        this.members = members;
+    }
+
+    public void setCommunityPosts(List<Post> communityPosts) {
+        this.communityPosts = communityPosts;
+    }
+
+    public String getName() {
+        return name;
     }
 }

@@ -187,7 +187,22 @@ public class Main {
 
             switch (choice) {
                 case "1":
-                    System.out.println("\n[Feature: Search Communities] - Enter search logic here.");
+                    System.out.print("\nEnter community name to search: ");
+                    String searchQuery = scanner.nextLine().trim();
+                    
+                    // Fetch results from the database layer
+                    List<Community> searchResults = dbOps.getCommunitiesByName(searchQuery);
+
+                    if (searchResults == null || searchResults.isEmpty()) {
+                        System.out.println("No communities found matching: '" + searchQuery + "'");
+                    } else {
+                        System.out.println("\n--- Search Results ---");
+                        for (int i = 0; i < searchResults.size(); i++) {
+                            Community c = searchResults.get(i);
+                            // Assuming Community class has getName() and getGenres() as per the diagram
+                            System.out.println((i + 1) + ". " + c.getName() + " | Genres: " + String.join(", ", c.getGenres()));
+                        }
+                    }
                     break;
                 case "2":
                     System.out.println("\n[Feature: View Joined Communities] - Fetching from DB...");
