@@ -146,27 +146,29 @@ public class Main {
             System.out.println("1. Community Tab");
             System.out.println("2. Friends Tab");
             System.out.println("3. Find Gamers Tab");
-            System.out.println("4. Log Out");
-            System.out.print("Choose a tab (1-4): ");
+            System.out.println("4. Profile Settings");
+            System.out.println("5. Log Out");
+            System.out.print("Choose a tab (1-5): ");
 
             String choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1":
-                    showCommunityTab(user);
+                case "1": showCommunityTab(user); break;
+                case "2": showFriendsTab(user); break;
+                case "3": showFindGamersTab(user); break;
+                case "4": 
+                    // If this returns true, the user deleted their account, so we log them out.
+                    boolean accountDeleted = showProfileSettingsTab(user);
+                    if (accountDeleted) {
+                        loggedIn = false;
+                    }
                     break;
-                case "2":
-                    showFriendsTab(user);
-                    break;
-                case "3":
-                    showFindGamersTab(user);
-                    break;
-                case "4":
+                case "5":
                     loggedIn = false;
                     System.out.println("Logging out... Returning to main menu.");
                     break;
                 default:
-                    System.out.println("Invalid option. Please choose 1-4.");
+                    System.out.println("Invalid option. Please choose 1-5.");
             }
         }
     }
@@ -187,7 +189,22 @@ public class Main {
 
             switch (choice) {
                 case "1":
-                    System.out.println("\n[Feature: Search Communities] - Enter search logic here.");
+                    System.out.print("\nEnter community name to search: ");
+                    String searchQuery = scanner.nextLine().trim();
+                    
+                    // Fetch results from the database layer
+                    List<Community> searchResults = dbOps.getCommunitiesByName(searchQuery);
+
+                    if (searchResults == null || searchResults.isEmpty()) {
+                        System.out.println("No communities found matching: '" + searchQuery + "'");
+                    } else {
+                        System.out.println("\n--- Search Results ---");
+                        for (int i = 0; i < searchResults.size(); i++) {
+                            Community c = searchResults.get(i);
+                            // Assuming Community class has getName() and getGenres() as per the diagram
+                            System.out.println((i + 1) + ". " + c.getName() + " | Genres: " + String.join(", ", c.getGenres()));
+                        }
+                    }
                     break;
                 case "2":
                     System.out.println("\n[Feature: View Joined Communities] - Fetching from DB...");
@@ -211,10 +228,11 @@ public class Main {
             System.out.println("1. View Online Friends");
             System.out.println("2. Send Notification to Friend");
             System.out.println("3. Add Friend");
-            System.out.println("4. Remove Friend");
-            System.out.println("5. View Groups");
-            System.out.println("6. Create Group");
-            System.out.println("7. Back to Dashboard");
+            System.out.println("4. View Incoming Friend Requests"); // NEW OPTION
+            System.out.println("5. Remove Friend");
+            System.out.println("6. View Groups");
+            System.out.println("7. Create Group");
+            System.out.println("8. Back to Dashboard");
             System.out.print("Choose an option: ");
 
             String choice = scanner.nextLine().trim();
@@ -229,24 +247,68 @@ public class Main {
                 case "3":
                     System.out.print("\nEnter username to add: ");
                     String addTarget = scanner.nextLine().trim();
-                    System.out.println("Sending friend request to " + addTarget + "...");
+                    User targetUser = dbOps.getUserByUsername(addTarget);
+                    if (targetUser == null) {
+                        System.out.println("User '" + addTarget + "' not found.");
+                        break;
+                    }
+                    if (targetUser.getUserID() == user.getUserID()) {
+                        System.out.println("You cannot send a friend request to yourself.");
+                        break;
+                    }
+                    boolean requestSent = dbOps.insertFriendRequest(user.getUserID(), targetUser.getUserID());
+                    if (requestSent) {
+                        System.out.println("Friend request sent to " + addTarget + "!");
+                    } else {
+                        System.out.println("Failed to send friend request to " + addTarget + ".");
+                    }
                     break;
                 case "4":
+                    System.out.println("\n--- INCOMING FRIEND REQUESTS ---");
+                    List<User> pendingRequests = dbOps.getIncomingFriendRequests(user.getUserID());
+                    
+                    if (pendingRequests == null || pendingRequests.isEmpty()) {
+                        System.out.println("You have no incoming friend requests right now.");
+                    } else {
+                        for (User sender : pendingRequests) {
+                            System.out.println("\nRequest from: " + sender.getUsername());
+                            System.out.print("Do you want to accept? (yes/no/skip): ");
+                            String answer = scanner.nextLine().trim().toLowerCase();
+                            
+                            if (answer.equals("yes")) {
+                                if (dbOps.acceptFriendRequest(user.getUserID(), sender.getUserID())) {
+                                    System.out.println("Accepted! You are now friends with " + sender.getUsername() + ".");
+                                } else {
+                                    System.out.println("Error accepting request.");
+                                }
+                            } else if (answer.equals("no")) {
+                                if (dbOps.declineFriendRequest(user.getUserID(), sender.getUserID())) {
+                                    System.out.println("Request declined.");
+                                } else {
+                                    System.out.println("Error declining request.");
+                                }
+                            } else {
+                                System.out.println("Skipped.");
+                            }
+                        }
+                    }
+                    break;
+                case "5":
                     System.out.print("\nEnter username to remove: ");
                     String removeTarget = scanner.nextLine().trim();
                     System.out.println("Removing " + removeTarget + " from friends list...");
                     break;
-                case "5":
+                case "6":
                     System.out.println("\n[Feature: View Groups]");
                     break;
-                case "6":
+                case "7":
                     System.out.println("\n[Feature: Create Group]");
                     break;
-                case "7":
+                case "8":
                     inTab = false;
                     break;
                 default:
-                    System.out.println("Invalid option.");
+                    System.out.println("Invalid option. Please choose 1-8.");
             }
         }
     }
@@ -289,5 +351,91 @@ public class Main {
                     System.out.println("Invalid option.");
             }
         }
+    }
+    // ==========================================
+    // 4. PROFILE SETTINGS
+    // ==========================================
+    private static boolean showProfileSettingsTab(User user) {
+        boolean inTab = true;
+        
+        while (inTab) {
+            System.out.println("\n--- PROFILE SETTINGS ---");
+            System.out.println("1. View My Posts");
+            System.out.println("2. Edit Profile Information");
+            System.out.println("3. Delete Account");
+            System.out.println("4. Back to Dashboard");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    System.out.println("\n[Fetching your posts...]");
+                    List<Post> myPosts = dbOps.getPostsByUserID(user.getUserID());
+                    
+                    if (myPosts == null || myPosts.isEmpty()) {
+                        System.out.println("You haven't made any posts yet.");
+                    } else {
+                        System.out.println("\n--- My Posts ---");
+                        for (Post p : myPosts) {
+                            System.out.println("Post ID: " + p.getPostID());
+                            System.out.println("Content: " + p.getTextContent());
+                            System.out.println("Likes: " + p.getLikeCount() + " | Dislikes: " + p.getDislikeCount());
+                            System.out.println("-------------------");
+                        }
+                    }
+                    break;
+
+                case "2":
+                    System.out.println("\n--- EDIT PROFILE ---");
+                    System.out.println("Leave a field blank and press Enter to keep current value.");
+                    
+                    System.out.print("Update Bio (Current: " + user.getBio() + "): ");
+                    String newBio = scanner.nextLine().trim();
+                    if (!newBio.isEmpty()) user.setBio(newBio);
+
+                    System.out.print("Update Age (Current: " + user.getAge() + "): ");
+                    String newAgeStr = scanner.nextLine().trim();
+                    if (!newAgeStr.isEmpty()) {
+                        try {
+                            user.setAge(Integer.parseInt(newAgeStr));
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid age format. Keeping old age.");
+                        }
+                    }
+
+                    if (dbOps.updateUserProfile(user)) {
+                        System.out.println("Profile updated successfully!");
+                    } else {
+                        System.out.println("Failed to update profile.");
+                    }
+                    break;
+
+                case "3":
+                    System.out.println("\n--- DELETE ACCOUNT ---");
+                    System.out.print("Are you SURE you want to delete your account? This cannot be undone! (type 'yes' to confirm): ");
+                    String confirm = scanner.nextLine().trim().toLowerCase();
+                    
+                    if (confirm.equals("yes")) {
+                        if (dbOps.deleteUser(user.getUserID())) {
+                            System.out.println("Account deleted successfully. We're sad to see you go!");
+                            return true; // Return true to trigger the logout in the dashboard
+                        } else {
+                            System.out.println("Error: Could not delete account.");
+                        }
+                    } else {
+                        System.out.println("Account deletion cancelled.");
+                    }
+                    break;
+
+                case "4":
+                    inTab = false;
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
+        }
+        return false; // Return false so the user stays logged in
     }
 }
