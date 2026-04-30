@@ -228,10 +228,11 @@ public class Main {
             System.out.println("1. View Online Friends");
             System.out.println("2. Send Notification to Friend");
             System.out.println("3. Add Friend");
-            System.out.println("4. Remove Friend");
-            System.out.println("5. View Groups");
-            System.out.println("6. Create Group");
-            System.out.println("7. Back to Dashboard");
+            System.out.println("4. View Incoming Friend Requests"); // NEW OPTION
+            System.out.println("5. Remove Friend");
+            System.out.println("6. View Groups");
+            System.out.println("7. Create Group");
+            System.out.println("8. Back to Dashboard");
             System.out.print("Choose an option: ");
 
             String choice = scanner.nextLine().trim();
@@ -246,24 +247,68 @@ public class Main {
                 case "3":
                     System.out.print("\nEnter username to add: ");
                     String addTarget = scanner.nextLine().trim();
-                    System.out.println("Sending friend request to " + addTarget + "...");
+                    User targetUser = dbOps.getUserByUsername(addTarget);
+                    if (targetUser == null) {
+                        System.out.println("User '" + addTarget + "' not found.");
+                        break;
+                    }
+                    if (targetUser.getUserID() == user.getUserID()) {
+                        System.out.println("You cannot send a friend request to yourself.");
+                        break;
+                    }
+                    boolean requestSent = dbOps.insertFriendRequest(user.getUserID(), targetUser.getUserID());
+                    if (requestSent) {
+                        System.out.println("Friend request sent to " + addTarget + "!");
+                    } else {
+                        System.out.println("Failed to send friend request to " + addTarget + ".");
+                    }
                     break;
                 case "4":
+                    System.out.println("\n--- INCOMING FRIEND REQUESTS ---");
+                    List<User> pendingRequests = dbOps.getIncomingFriendRequests(user.getUserID());
+                    
+                    if (pendingRequests == null || pendingRequests.isEmpty()) {
+                        System.out.println("You have no incoming friend requests right now.");
+                    } else {
+                        for (User sender : pendingRequests) {
+                            System.out.println("\nRequest from: " + sender.getUsername());
+                            System.out.print("Do you want to accept? (yes/no/skip): ");
+                            String answer = scanner.nextLine().trim().toLowerCase();
+                            
+                            if (answer.equals("yes")) {
+                                if (dbOps.acceptFriendRequest(user.getUserID(), sender.getUserID())) {
+                                    System.out.println("Accepted! You are now friends with " + sender.getUsername() + ".");
+                                } else {
+                                    System.out.println("Error accepting request.");
+                                }
+                            } else if (answer.equals("no")) {
+                                if (dbOps.declineFriendRequest(user.getUserID(), sender.getUserID())) {
+                                    System.out.println("Request declined.");
+                                } else {
+                                    System.out.println("Error declining request.");
+                                }
+                            } else {
+                                System.out.println("Skipped.");
+                            }
+                        }
+                    }
+                    break;
+                case "5":
                     System.out.print("\nEnter username to remove: ");
                     String removeTarget = scanner.nextLine().trim();
                     System.out.println("Removing " + removeTarget + " from friends list...");
                     break;
-                case "5":
+                case "6":
                     System.out.println("\n[Feature: View Groups]");
                     break;
-                case "6":
+                case "7":
                     System.out.println("\n[Feature: Create Group]");
                     break;
-                case "7":
+                case "8":
                     inTab = false;
                     break;
                 default:
-                    System.out.println("Invalid option.");
+                    System.out.println("Invalid option. Please choose 1-8.");
             }
         }
     }

@@ -7,6 +7,7 @@ public interface DBOperation {
     User getUserByUsername(String username);
     boolean updateUserProfile(User user);
     boolean deleteUser(String username);
+    boolean deleteUser(int userID);
     boolean insertFriendRequest(int senderID, int receiverID);
     boolean deleteFriendRequest(int senderID, int receiverID);
     boolean insertFriendship(int userID1, int userID2);
@@ -20,4 +21,7 @@ public interface DBOperation {
     boolean insertGroupMember(int groupID, int userID);
     List<Community> getCommunitiesByName(String nameQuery);
     User loginUser(String email, String password);
+    List<User> getIncomingFriendRequests(int userID);
+    boolean acceptFriendRequest(int userID, int senderID);
+    boolean declineFriendRequest(int userID, int senderID);
 }

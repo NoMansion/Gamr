@@ -109,6 +109,20 @@ public class SQLOperation implements DBOperation {
         }
     }
 
+    @Override
+    public boolean deleteUser(int userID) {
+        String sql = "DELETE FROM Users WHERE user_id = ?";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userID);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // ==========================================
     // 2. SOCIAL CONNECTIONS & FRIENDS
     // ==========================================
@@ -412,5 +426,92 @@ public class SQLOperation implements DBOperation {
             e.printStackTrace();
         }
         return null; // Login failed
+    }
+
+    @Override
+    public List<User> getIncomingFriendRequests(int receiverId) {
+        List<User> senders = new ArrayList<>();
+        Connection conn = dbConnection.getConnection();
+        
+        // This query joins the Users table with the FriendRequests table 
+        // to grab the full User profile of the person who sent the request.
+        String sql = "SELECT u.* FROM Users u JOIN FriendRequests fr ON u.USER_ID = fr.SENDER_ID WHERE fr.RECEIVER_ID = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, receiverId);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    User u = new User();
+                    u.setUserID(rs.getInt("USER_ID"));
+                    u.setUsername(rs.getString("USERNAME"));
+                    // ... set any other fields you want to show
+                    senders.add(u);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching requests: " + e.getMessage());
+        }
+        return senders;
+    }
+
+    @Override
+    public boolean acceptFriendRequest(int receiverId, int senderId) {
+        Connection conn = dbConnection.getConnection();
+        
+        // We have to do TWO things here: 
+        // 1. Add them to the Friends table.
+        // 2. Delete the pending request from the FriendRequests table.
+        String insertFriendSql = "INSERT INTO Friends (USER1_ID, USER2_ID) VALUES (?, ?)";
+        String deleteRequestSql = "DELETE FROM FriendRequests WHERE SENDER_ID = ? AND RECEIVER_ID = ?";
+        
+        try {
+            // It's good practice to turn off auto-commit when doing multiple linked updates
+            conn.setAutoCommit(false);
+            
+            try (PreparedStatement insertStmt = conn.prepareStatement(insertFriendSql);
+                 PreparedStatement deleteStmt = conn.prepareStatement(deleteRequestSql)) {
+                
+                // 1. Insert into friends table
+                insertStmt.setInt(1, receiverId);
+                insertStmt.setInt(2, senderId);
+                insertStmt.executeUpdate();
+                
+                // 2. Remove the request
+                deleteStmt.setInt(1, senderId);
+                deleteStmt.setInt(2, receiverId);
+                deleteStmt.executeUpdate();
+                
+                conn.commit(); // Make changes permanent
+                return true;
+            } catch (SQLException e) {
+                conn.rollback(); // If something failed, undo any partial changes
+                e.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true); // Put it back to normal
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean declineFriendRequest(int receiverId, int senderId) {
+        Connection conn = dbConnection.getConnection();
+        String deleteRequestSql = "DELETE FROM FriendRequests WHERE SENDER_ID = ? AND RECEIVER_ID = ?";
+        
+        try (PreparedStatement deleteStmt = conn.prepareStatement(deleteRequestSql)) {
+            deleteStmt.setInt(1, senderId);
+            deleteStmt.setInt(2, receiverId);
+            
+            int rowsAffected = deleteStmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error declining request: " + e.getMessage());
+            return false;
+        }
     }
 }
