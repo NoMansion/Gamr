@@ -6,7 +6,7 @@ import java.util.ArrayList;
 public class User {
 
     // --- Attributes ---
-    private int userId;
+    private int userID;
     private String username;
     private String email;
     private String passwordHash;
@@ -34,12 +34,12 @@ public class User {
 
     // --- Getters and Setters ---
 
-    public int getUserId() {
-        return userId;
+    public int getUserID() {
+        return userID;
     }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
 
     public String getUsername() {

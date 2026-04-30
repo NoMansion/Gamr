@@ -40,7 +40,7 @@ public class SQLOperation implements DBOperation {
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         // Now this will safely grab the numeric ID!
-                        user.setUserId(generatedKeys.getInt(1));
+                        user.setUserID(generatedKeys.getInt(1));
                     }
                 }
                 return true;
@@ -62,7 +62,7 @@ public class SQLOperation implements DBOperation {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     User user = new User();
-                    user.setUserId(rs.getInt("user_id"));
+                    user.setUserID(rs.getInt("user_id"));
                     user.setUsername(rs.getString("username"));
                     user.setEmail(rs.getString("email"));
                     user.setPasswordHash(rs.getString("password_hash"));
@@ -86,7 +86,7 @@ public class SQLOperation implements DBOperation {
             pstmt.setString(1, user.getEmail());
             pstmt.setInt(2, user.getAge());
             pstmt.setString(3, user.getBio());
-            pstmt.setInt(4, user.getUserId());
+            pstmt.setInt(4, user.getUserID());
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -144,13 +144,13 @@ public class SQLOperation implements DBOperation {
     }
 
     @Override
-    public boolean insertFriendship(int userId1, int userId2) {
+    public boolean insertFriendship(int userID1, int userID2) {
         String sql = "INSERT INTO Friends (user1_id, user2_id) VALUES (?, ?)";
         Connection conn = dbConnection.getConnection();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, userId1);
-            pstmt.setInt(2, userId2);
+            pstmt.setInt(1, userID1);
+            pstmt.setInt(2, userID2);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -159,15 +159,15 @@ public class SQLOperation implements DBOperation {
     }
 
     @Override
-    public boolean deleteFriendship(int userId1, int userId2) {
+    public boolean deleteFriendship(int userID1, int userID2) {
         String sql = "DELETE FROM Friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)";
         Connection conn = dbConnection.getConnection();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, userId1);
-            pstmt.setInt(2, userId2);
-            pstmt.setInt(3, userId2);
-            pstmt.setInt(4, userId1);
+            pstmt.setInt(1, userID1);
+            pstmt.setInt(2, userID2);
+            pstmt.setInt(3, userID2);
+            pstmt.setInt(4, userID1);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -202,7 +202,7 @@ public class SQLOperation implements DBOperation {
         Connection conn = dbConnection.getConnection();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            pstmt.setInt(1, post.getAuthor().getUserId());
+            pstmt.setInt(1, post.getAuthor().getUserID());
 
             // Community handling logic... assuming getCommunity exists
             pstmt.setNull(2, java.sql.Types.INTEGER);
@@ -228,7 +228,7 @@ public class SQLOperation implements DBOperation {
     }
 
     @Override
-    public List<Post> getPostsByUserId(int authorId) {
+    public List<Post> getPostsByUserID(int authorId) {
         List<Post> posts = new ArrayList<>();
         String sql = "SELECT * FROM Posts WHERE author_id = ?";
         Connection conn = dbConnection.getConnection();
@@ -238,7 +238,7 @@ public class SQLOperation implements DBOperation {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     User author = new User();
-                    author.setUserId(rs.getInt("author_id"));
+                    author.setUserID(rs.getInt("author_id"));
 
                     Post post = new Post(
                             rs.getInt("post_id"),
@@ -279,7 +279,7 @@ public class SQLOperation implements DBOperation {
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, parentPostId);
-            pstmt.setInt(2, comment.getAuthor().getUserId());
+            pstmt.setInt(2, comment.getAuthor().getUserID());
             pstmt.setString(3, comment.getTextContent());
             pstmt.setInt(4, comment.getLikesCount());
             pstmt.setInt(5, comment.getDislikeCount());
@@ -320,13 +320,13 @@ public class SQLOperation implements DBOperation {
     // ==========================================
 
     @Override
-    public boolean insertGroupMember(int groupId, int userId) {
+    public boolean insertGroupMember(int groupId, int userID) {
         String sql = "INSERT INTO GroupMembers (group_id, user_id) VALUES (?, ?)";
         Connection conn = dbConnection.getConnection();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, groupId);
-            pstmt.setInt(2, userId);
+            pstmt.setInt(2, userID);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -399,7 +399,7 @@ public class SQLOperation implements DBOperation {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     User user = new User();
-                    user.setUserId(rs.getInt("user_id"));
+                    user.setUserID(rs.getInt("user_id"));
                     user.setUsername(rs.getString("username"));
                     user.setEmail(rs.getString("email"));
                     user.setPasswordHash(rs.getString("password_hash"));

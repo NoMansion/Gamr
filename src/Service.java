@@ -90,12 +90,12 @@ public class Service {
     // ==========================================
 
     public void sendFriendRequest(User sender, User receiver) {
-        boolean success = dbOp.insertFriendRequest(sender.getUserId(), receiver.getUserId());
+        boolean success = dbOp.insertFriendRequest(sender.getUserID(), receiver.getUserID());
         if (success) System.out.println("Friend request sent to " + receiver.getUsername());
     }
 
     public void acceptFriendRequest(User user, User sender) {
-        boolean success = dbOp.insertFriendship(user.getUserId(), sender.getUserId());
+        boolean success = dbOp.insertFriendship(user.getUserID(), sender.getUserID());
         if (success) System.out.println("Friend request accepted from " + sender.getUsername());
     }
 
@@ -105,7 +105,7 @@ public class Service {
     }
 
     public void unaddFriend(User user, User friendToRemove) {
-        boolean success = dbOp.deleteFriendship(user.getUserId(), friendToRemove.getUserId());
+        boolean success = dbOp.deleteFriendship(user.getUserID(), friendToRemove.getUserID());
         if (success) System.out.println("Removed friend: " + friendToRemove.getUsername());
     }
 
@@ -166,7 +166,7 @@ public class Service {
     }
 
     public List<Post> retrieveUserPosts(User user) {
-        return dbOp.getPostsByUserId(user.getUserId());
+        return dbOp.getPostsByUserID(user.getUserID());
     }
 
     // Note: Added Post parameter so the service knows what to like
