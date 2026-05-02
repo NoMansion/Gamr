@@ -197,11 +197,14 @@ public boolean insertComment(int postId, int authorId, String text) {
         System.out.println("Retrieving mutual friends...");
         return new ArrayList<>();
     }
-
+    
     public List<User> retrieveFriendRecommendations(User user) {
-        System.out.println("Fetching recommendations for " + user.getUsername());
+    if (user == null || user.getUserID() <= 0) {
         return new ArrayList<>();
     }
+
+    return dbOp.getFriendRecommendations(user.getUserID());
+}
 
     public List<User> filterRecommendationsByAge(List<User> recommendations, int targetAge) {
         return recommendations.stream()

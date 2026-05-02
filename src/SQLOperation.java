@@ -14,7 +14,7 @@ public class SQLOperation implements DBOperation {
 
     private DatabaseConnection dbConnection;
 
-    // Constructor to inject the connection dependency
+    // Constructor to inject the connection dependency1
     public SQLOperation(DatabaseConnection dbConnection) {
         this.dbConnection = dbConnection;
     }
@@ -24,34 +24,37 @@ public class SQLOperation implements DBOperation {
     // ==========================================
 
     @Override
-    public boolean insertUser(User user) {
-        String sql = "INSERT INTO Users (username, email, password_hash, age, bio) VALUES (?, ?, ?, ?, ?)";
-        Connection conn = dbConnection.getConnection();
+public boolean insertUser(User user) {
+    String sql = "INSERT INTO Users (username, email, password_hash, age, bio, favorite_games, favorite_genres) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    Connection conn = dbConnection.getConnection();
 
-        // Notice the String array here instead of Statement.RETURN_GENERATED_KEYS
-        try (PreparedStatement pstmt = conn.prepareStatement(sql, new String[] { "user_id" })) {
-            pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getEmail());
-            pstmt.setString(3, user.getPasswordHash());
-            pstmt.setInt(4, user.getAge());
-            pstmt.setString(5, user.getBio());
+    try (PreparedStatement pstmt = conn.prepareStatement(sql, new String[] { "user_id" })) {
+        pstmt.setString(1, user.getUsername());
+        pstmt.setString(2, user.getEmail());
+        pstmt.setString(3, user.getPasswordHash());
+        pstmt.setInt(4, user.getAge());
+        pstmt.setString(5, user.getBio());
+        pstmt.setString(6, String.join(",", user.getFavoriteGames()));
+        pstmt.setString(7, String.join(",", user.getFavoriteGenres()));
 
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        // Now this will safely grab the numeric ID!
-                        user.setUserID(generatedKeys.getInt(1));
-                    }
+        int affectedRows = pstmt.executeUpdate();
+
+        if (affectedRows > 0) {
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    user.setUserID(generatedKeys.getInt(1));
                 }
-                return true;
             }
-            return false;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            return true;
         }
+
+        return false;
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
     }
+}
 
     @Override
     public User getUserByUsername(String username) {
@@ -79,22 +82,24 @@ public class SQLOperation implements DBOperation {
     }
 
     @Override
-    public boolean updateUserProfile(User user) {
-        String sql = "UPDATE Users SET email = ?, age = ?, bio = ? WHERE user_id = ?";
-        Connection conn = dbConnection.getConnection();
+public boolean updateUserProfile(User user) {
+    String sql = "UPDATE Users SET email = ?, age = ?, bio = ?, favorite_games = ?, favorite_genres = ? WHERE user_id = ?";
+    Connection conn = dbConnection.getConnection();
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, user.getEmail());
-            pstmt.setInt(2, user.getAge());
-            pstmt.setString(3, user.getBio());
-            pstmt.setInt(4, user.getUserID());
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, user.getEmail());
+        pstmt.setInt(2, user.getAge());
+        pstmt.setString(3, user.getBio());
+        pstmt.setString(4, String.join(",", user.getFavoriteGames()));
+        pstmt.setString(5, String.join(",", user.getFavoriteGenres()));
+        pstmt.setInt(6, user.getUserID());
 
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        return pstmt.executeUpdate() > 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
     }
+}
 
     @Override
     public boolean deleteUser(String username) {
@@ -505,6 +510,15 @@ public boolean updateCommentVotes(int commentID, boolean isLike) {
                     user.setPasswordHash(rs.getString("password_hash"));
                     user.setAge(rs.getInt("age"));
                     user.setBio(rs.getString("bio"));
+                    String gamesRaw = rs.getString("favorite_games");
+                    if (gamesRaw != null && !gamesRaw.trim().isEmpty()) {
+                        user.setFavoriteGames(Arrays.asList(gamesRaw.split("\\s*,\\s*")));
+                    }
+
+                    String genresRaw = rs.getString("favorite_genres");
+                    if (genresRaw != null && !genresRaw.trim().isEmpty()) {
+                    user.setFavoriteGenres(Arrays.asList(genresRaw.split("\\s*,\\s*")));
+                    }
                     conn.createStatement().executeUpdate("UPDATE Users SET is_online = 1 WHERE user_id = " + user.getUserID());
                     return user; // Login successful
                 }
@@ -1041,5 +1055,53 @@ public boolean removeFriend(int userId1, int userId2) {
             e.printStackTrace();
             return false;
         }
+    }
+
+
+    @Override
+public List<User> getFriendRecommendations(int userID) {
+    List<User> recommendations = new ArrayList<>();
+
+    String sql =
+        "SELECT u.user_id, u.username, u.email, u.age, u.bio, u.favorite_games, u.favorite_genres " +
+        "FROM Users u " +
+        "WHERE u.user_id <> ?";
+
+    Connection conn = dbConnection.getConnection();
+
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setInt(1, userID);
+
+        try (ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                User user = new User();
+
+                user.setUserID(rs.getInt("user_id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setAge(rs.getInt("age"));
+                user.setBio(rs.getString("bio"));
+
+                // Load favorite games
+                String gamesRaw = rs.getString("favorite_games");
+                if (gamesRaw != null && !gamesRaw.trim().isEmpty()) {
+                    user.setFavoriteGames(Arrays.asList(gamesRaw.split("\\s*,\\s*")));
+                }
+
+                // Load favorite genres
+                String genresRaw = rs.getString("favorite_genres");
+                if (genresRaw != null && !genresRaw.trim().isEmpty()) {
+                    user.setFavoriteGenres(Arrays.asList(genresRaw.split("\\s*,\\s*")));
+                }
+
+                recommendations.add(user);
+            }
+        }
+
+    } catch (SQLException e) {
+        System.err.println("Error getting friend recommendations: " + e.getMessage());
+    }
+
+     return recommendations;
     }
 }
