@@ -206,6 +206,81 @@ public class SQLOperation implements DBOperation {
         }
     }
 
+    @Override
+    public List<User> getOnlineFriends(int userID) {
+        List<User> onlineFriends = new ArrayList<>();
+        String sql = "SELECT u.user_id, u.username, u.email, u.age, u.bio " +
+                 "FROM Users u " +
+                 "JOIN Friends f ON (f.user1_id = ? AND f.user2_id = u.user_id) " +
+                 "               OR (f.user2_id = ? AND f.user1_id = u.user_id) " +
+                 "WHERE u.is_online = 1";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userID);
+            pstmt.setInt(2, userID);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    User user = new User();
+                    user.setUserID(rs.getInt("user_id"));
+                    user.setUsername(rs.getString("username"));
+                    user.setEmail(rs.getString("email"));
+                    user.setAge(rs.getInt("age"));
+                    user.setBio(rs.getString("bio"));
+                    onlineFriends.add(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return onlineFriends;
+    }
+
+    @Override
+    public List<User> getOfflineFriends(int userID) {
+        List<User> friends = new ArrayList<>();
+        String sql = "SELECT u.user_id, u.username, u.email, u.age, u.bio " +
+                    "FROM Users u " +
+                    "JOIN Friends f ON (f.user1_id = ? AND f.user2_id = u.user_id) " +
+                    "               OR (f.user2_id = ? AND f.user1_id = u.user_id) " +
+                    "WHERE u.is_online = 0";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userID);
+            pstmt.setInt(2, userID);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    User user = new User();
+                    user.setUserID(rs.getInt("user_id"));
+                    user.setUsername(rs.getString("username"));
+                    user.setEmail(rs.getString("email"));
+                    user.setAge(rs.getInt("age"));
+                    user.setBio(rs.getString("bio"));
+                    friends.add(user);
+                }
+            }   
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return friends;
+    }
+
+
+    @Override
+    public boolean setUserOffline(int userID) {
+        String sql = "UPDATE Users SET is_online = 0 WHERE user_id = ?";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userID);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // ==========================================
     // 3. POSTS & COMMENTS
     // ==========================================
@@ -420,6 +495,7 @@ public boolean updateCommentVotes(int commentID, boolean isLike) {
                     user.setPasswordHash(rs.getString("password_hash"));
                     user.setAge(rs.getInt("age"));
                     user.setBio(rs.getString("bio"));
+                    conn.createStatement().executeUpdate("UPDATE Users SET is_online = 1 WHERE user_id = " + user.getUserID());
                     return user; // Login successful
                 }
             }
