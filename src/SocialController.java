@@ -1,114 +1,754 @@
-// SocialController class for Gamr
-// Written by Brady Ehman
 package src;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class SocialController {
-	private Service service;
 
-	// Constructor to inject the shared Service instance
-	public SocialController(Service service) {
+	private final Service service;
+	private final Scanner scanner;
+	private User currentUser;
+
+	public SocialController(Service service, Scanner scanner) {
 		this.service = service;
+		this.scanner = scanner;
 	}
 
-	public void sendFriendRequest(User sender, User receiver) {
-		service.sendFriendRequest(sender, receiver);
+	public void run() {
+		boolean running = true;
+
+		while (running) {
+			System.out.println("\n--- MAIN MENU ---");
+			System.out.println("1. Log In");
+			System.out.println("2. Create Account");
+			System.out.println("3. Exit");
+			System.out.print("Choose an option (1-3): ");
+
+			String choice = scanner.nextLine().trim();
+
+			switch (choice) {
+				case "1":
+					handleLogin();
+					break;
+				case "2":
+					handleCreateAccount();
+					break;
+				case "3":
+					running = false;
+					System.out.println("Shutting down... Goodbye!");
+					break;
+				default:
+					System.out.println("Invalid option. Please enter 1, 2, or 3.");
+			}
+		}
 	}
 
-	public void skipAccount(User viewer, User viewAccount) {
-		service.skipAccount(viewer, viewAccount);
+	private void handleCreateAccount() {
+		System.out.println("\n--- CREATE ACCOUNT ---");
+		User newUser = new User();
+
+		System.out.print("Enter username: ");
+		newUser.setUsername(scanner.nextLine().trim());
+
+		System.out.print("Enter email: ");
+		newUser.setEmail(scanner.nextLine().trim());
+
+		System.out.print("Enter password: ");
+		newUser.setPasswordHash(scanner.nextLine().trim());
+
+		System.out.print("Enter age: ");
+		try {
+			newUser.setAge(Integer.parseInt(scanner.nextLine().trim()));
+		} catch (NumberFormatException e) {
+			System.out.println("Invalid age entered. Defaulting to 0.");
+			newUser.setAge(0);
+		}
+
+		System.out.print("Enter a short bio: ");
+		newUser.setBio(scanner.nextLine().trim());
+
+		System.out.print("Enter favorite games (comma-separated): ");
+		String gamesInput = scanner.nextLine();
+		List<String> gamesList = Arrays.stream(gamesInput.split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.collect(Collectors.toList());
+		newUser.setFavoriteGames(gamesList);
+
+		System.out.print("Enter favorite genres (comma-separated): ");
+		String genresInput = scanner.nextLine();
+		List<String> genresList = Arrays.stream(genresInput.split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.collect(Collectors.toList());
+		newUser.setFavoriteGenres(genresList);
+
+		boolean success = service.createAccount(newUser);
+
+		if (success) {
+			System.out.println("\nAccount created successfully! Welcome, " + newUser.getUsername() + ".");
+			System.out.println("Please log in with your new credentials.");
+		} else {
+			System.out.println("\nFailed to create account. That username or email might already be taken.");
+		}
 	}
 
-	public void acceptFriendRequest(User user, User sender) {
-		service.acceptFriendRequest(user, sender);
+	private void handleLogin() {
+		System.out.println("\n--- LOG IN ---");
+		System.out.print("Email: ");
+		String email = scanner.nextLine().trim();
+
+		System.out.print("Password: ");
+		String password = scanner.nextLine().trim();
+
+		User loggedInUser = service.login(email, password);
+
+		if (loggedInUser != null) {
+			currentUser = loggedInUser;
+			service.setCurrentUser(loggedInUser);
+			System.out.println("\nLogin successful! Welcome back, " + loggedInUser.getUsername() + "!");
+			showUserDashboard();
+		} else {
+			System.out.println("\nLogin failed. Incorrect email or password.");
+		}
 	}
 
-	public void declineFriendRequest(User user, User sender) {
-		service.declineFriendRequest(user, sender);
+	private void showUserDashboard() {
+		boolean loggedIn = true;
+
+		while (loggedIn) {
+			System.out.println("\n=== MAIN DASHBOARD ===");
+			System.out.println("1. Community Tab");
+			System.out.println("2. Friends Tab");
+			System.out.println("3. Find Gamers Tab");
+			System.out.println("4. Profile Settings");
+			System.out.println("5. Log Out");
+			System.out.print("Choose a tab (1-5): ");
+
+			String choice = scanner.nextLine().trim();
+
+			switch (choice) {
+				case "1":
+					showCommunityTab();
+					break;
+				case "2":
+					showFriendsTab();
+					break;
+				case "3":
+					showFindGamersTab();
+					break;
+				case "4":
+					boolean accountDeleted = showProfileSettingsTab();
+					if (accountDeleted) {
+						loggedIn = false;
+					}
+					break;
+				case "5":
+					loggedIn = false;
+					System.out.println("Logging out... Returning to main menu.");
+					currentUser = null;
+					service.logout();
+					break;
+				default:
+					System.out.println("Invalid option. Please choose 1-5.");
+			}
+		}
 	}
 
-	public void unaddFriend(User user, User friendToRemove) {
-		service.unaddFriend(user, friendToRemove);
+	private void showCommunityTab() {
+		boolean inTab = true;
+		while (inTab) {
+			System.out.println("\n--- COMMUNITY TAB ---");
+			System.out.println("1. Discover & Search Communities");
+			System.out.println("2. View Joined Communities");
+			System.out.println("3. Back to Dashboard");
+			System.out.print("Choose an option: ");
+
+			String choice = scanner.nextLine().trim();
+
+			switch (choice) {
+				case "1":
+					showCommunitySearchMenu();
+					break;
+				case "2":
+					List<Community> joinedCommunities = service.getJoinedCommunities(currentUser);
+					if (joinedCommunities == null || joinedCommunities.isEmpty()) {
+						System.out.println("You haven't joined any communities yet! Try discovering some first.");
+					} else {
+						System.out.println("\n--- My Communities ---");
+						for (int i = 0; i < joinedCommunities.size(); i++) {
+							System.out.println((i + 1) + ". " + joinedCommunities.get(i).getName());
+						}
+						System.out.print(
+								"Select a community to view (1-" + joinedCommunities.size() + ") or 0 to cancel: ");
+						try {
+							int selection = Integer.parseInt(scanner.nextLine().trim());
+							if (selection > 0 && selection <= joinedCommunities.size()) {
+								viewJoinedCommunity(joinedCommunities.get(selection - 1));
+							}
+						} catch (NumberFormatException e) {
+							System.out.println("Invalid selection. Returning to menu.");
+						}
+					}
+					break;
+				case "3":
+					inTab = false;
+					break;
+				default:
+					System.out.println("Invalid option.");
+			}
+		}
 	}
 
-	public List<User> retrieveMutualFriends(User user1, User user2) {
-		return service.retrieveMutualFriends(user1, user2);
+	private void showCommunitySearchMenu() {
+		boolean searching = true;
+
+		while (searching) {
+			System.out.println("\n--- DISCOVER COMMUNITIES ---");
+			System.out.println("1. Discover Random Community (Surprise me!)");
+			System.out.println("2. Discover Random Community by Genre");
+			System.out.println("3. Search by Exact Name");
+			System.out.println("4. Back to Community Tab");
+			System.out.print("Choose an option: ");
+
+			String choice = scanner.nextLine().trim();
+
+			switch (choice) {
+				case "1":
+					boolean rollingRandom = true;
+					while (rollingRandom) {
+						System.out.println("\n[Fetching community...]");
+						Community randomComm = service.getRandomCommunity();
+						if (randomComm != null) {
+							boolean stop = interactWithCommunity(randomComm);
+							if (stop) {
+								rollingRandom = false;
+							}
+						} else {
+							System.out.println("No communities found in the database!");
+							rollingRandom = false;
+						}
+					}
+					break;
+				case "2":
+					System.out.print("\nEnter a genre (e.g., RPG, Shooter, MMO): ");
+					String genre = scanner.nextLine().trim();
+					boolean rollingGenre = true;
+					while (rollingGenre) {
+						System.out.println("\n[Fetching " + genre + " community...]");
+						Community genreComm = service.getRandomCommunityByGenre(genre);
+						if (genreComm != null) {
+							boolean stop = interactWithCommunity(genreComm);
+							if (stop) {
+								rollingGenre = false;
+							}
+						} else {
+							System.out.println("No communities found for the genre: " + genre);
+							rollingGenre = false;
+						}
+					}
+					break;
+				case "3":
+					System.out.print("\nEnter community name to search: ");
+					String searchQuery = scanner.nextLine().trim();
+					List<Community> searchResults = service.getCommunitiesByName(searchQuery);
+					if (searchResults == null || searchResults.isEmpty()) {
+						System.out.println("No communities found matching: '" + searchQuery + "'");
+					} else {
+						System.out.println("\n--- Search Results ---");
+						for (int i = 0; i < searchResults.size(); i++) {
+							System.out.println((i + 1) + ". " + searchResults.get(i).getName());
+						}
+						System.out
+								.print("Select a community to view (1-" + searchResults.size() + ") or 0 to cancel: ");
+						try {
+							int selection = Integer.parseInt(scanner.nextLine().trim());
+							if (selection > 0 && selection <= searchResults.size()) {
+								interactWithCommunity(searchResults.get(selection - 1));
+							}
+						} catch (NumberFormatException e) {
+							System.out.println("Invalid selection. Returning to menu.");
+						}
+					}
+					break;
+				case "4":
+					searching = false;
+					break;
+				default:
+					System.out.println("Invalid option.");
+			}
+		}
 	}
 
-	public List<User> retrieveFriendRecommendations(User user) {
-		return service.retrieveFriendRecommendations(user);
+	private boolean interactWithCommunity(Community community) {
+		while (true) {
+			System.out.println("\n=================================");
+			System.out.println(" COMMUNITY: " + community.getName());
+			System.out.println(" GENRES: " + String.join(", ", community.getGenres()));
+			System.out.println("=================================");
+			System.out.println("1. Join Community");
+			System.out.println("2. Skip (Show Next Community)");
+			System.out.println("3. Exit to Search Menu");
+			System.out.print("Action: ");
+
+			String choice = scanner.nextLine().trim();
+			if (choice.equals("1")) {
+				boolean success = service.joinCommunity(currentUser.getUserID(), community.getCommunityID());
+				if (success) {
+					System.out.println("\n>>> Success! You are now a member of " + community.getName() + "!");
+				} else {
+					System.out.println("\n>>> Failed to join. You might already be a member of this community.");
+				}
+				return true;
+			}
+			if (choice.equals("2")) {
+				return false;
+			}
+			if (choice.equals("3")) {
+				return true;
+			}
+			System.out.println("Invalid choice.");
+		}
 	}
 
-	public List<User> filterRecommendationsByAge(List<User> recommendations, int targetAge) {
-		return service.filterRecommendationsByAge(recommendations, targetAge);
+	private void viewJoinedCommunity(Community community) {
+		boolean viewing = true;
+		while (viewing) {
+			System.out.println("\n--- " + community.getName().toUpperCase() + " FEED ---");
+			List<Post> posts = service.getCommunityPosts(community);
+			if (posts == null || posts.isEmpty()) {
+				System.out.println("No posts yet.");
+			} else {
+				for (int i = 0; i < posts.size(); i++) {
+					Post post = posts.get(i);
+					// Safely grab the username
+					String authorName = (post.getAuthor() != null && post.getAuthor().getUsername() != null) 
+					                    ? post.getAuthor().getUsername() : "Unknown User";
+					                    
+					System.out.println((i + 1) + ". [" + authorName + "] " + post.getTextContent());
+					System.out.println("   Likes: " + post.getLikeCount() + " | Dislikes: " + post.getDislikeCount() + " | Comments: " + post.getCommentCount());
+				}
+			}
+
+			System.out.println("\n1. Make a Post | 2. View Post & Comments | 3. Back");
+			System.out.print("Action: ");
+			String choice = scanner.nextLine().trim();
+
+			if (choice.equals("1")) {
+				System.out.print("Post content: ");
+				String content = scanner.nextLine().trim();
+				service.createPost(community, currentUser, content);
+			} else if (choice.equals("2") && posts != null && !posts.isEmpty()) {
+				System.out.print("Select Post number: ");
+				try {
+					int idx = Integer.parseInt(scanner.nextLine().trim()) - 1;
+					if (idx >= 0 && idx < posts.size()) {
+						showPostInteractionMenu(posts.get(idx));
+					}
+				} catch (NumberFormatException e) {
+					System.out.println("Invalid input.");
+				}
+			} else if (choice.equals("3")) {
+				viewing = false;
+			}
+		}
 	}
 
-	public List<User> filterRecommendationsByGenre(List<User> recommendations, String genre) {
-		return service.filterRecommendationsByGenre(recommendations, genre);
+	private void showPostInteractionMenu(Post post) {
+		boolean interacting = true;
+		while (interacting) {
+		    // Safely grab the username
+		    String authorName = (post.getAuthor() != null && post.getAuthor().getUsername() != null) 
+		                        ? post.getAuthor().getUsername() : "Unknown User";
+		                        
+			System.out.println("\n=================================");
+			System.out.println("POST by " + authorName + ": " + post.getTextContent());
+			System.out.println("Likes: " + post.getLikeCount() + " | Dislikes: " + post.getDislikeCount() + " | Comments: " + post.getCommentCount());
+			System.out.println("=================================");
+
+			// 1. Fetch and display existing comments through the Service
+			List<Comment> comments = service.getCommentsByPostId(post.getPostID());
+			System.out.println("\n--- COMMENTS ---");
+			if (comments == null || comments.isEmpty()) {
+				System.out.println("(No comments yet)");
+			} else {
+				for (int i = 0; i < comments.size(); i++) {
+					Comment comment = comments.get(i);
+					
+					// Safely grab the username
+					String commentAuthor = (comment.getAuthor() != null && comment.getAuthor().getUsername() != null) 
+					                       ? comment.getAuthor().getUsername() : "Unknown User";
+					                       
+					System.out.println((i + 1) + ". [" + commentAuthor + "] " + comment.getTextContent());
+					System.out.println("   Likes: " + comment.getLikesCount() + " | Dislikes: " + comment.getDislikeCount());
+				}
+			}
+
+			System.out.println("\n1. Like Post");
+			System.out.println("2. Dislike Post");
+			System.out.println("3. Remove My Interaction");
+			System.out.println("4. Add Comment");
+			System.out.println("5. Like/Dislike a Comment");
+			System.out.println("6. Back");
+			System.out.print("Action: ");
+
+			String choice = scanner.nextLine().trim();
+
+			switch (choice) {
+				case "1":
+					// Delegate to service to use the interaction ledger
+					if (service.likePost(post.getPostID(), currentUser.getUserID())) {
+						System.out.println("Liked!");
+						// Refresh post data to ensure counts stay accurate
+						Post updatedPost = service.getPostById(post.getPostID());
+						post.setLikeCount(updatedPost.getLikeCount());
+						post.setDislikeCount(updatedPost.getDislikeCount());
+						post.setCommentCount(updatedPost.getCommentCount());
+					}
+					break;
+				case "2":
+					// Delegate to service to use the interaction ledger
+					if (service.dislikePost(post.getPostID(), currentUser.getUserID())) {
+						System.out.println("Disliked!");
+						// Refresh post data to ensure counts stay accurate
+						Post updatedPost = service.getPostById(post.getPostID());
+						post.setLikeCount(updatedPost.getLikeCount());
+						post.setDislikeCount(updatedPost.getDislikeCount());
+						post.setCommentCount(updatedPost.getCommentCount());
+					}
+					break;
+				case "3":
+					// Logic to clear existing likes or dislikes
+					if (service.clearInteraction(post.getPostID(), currentUser.getUserID())) {
+						System.out.println("Interaction removed.");
+						// Refresh post data to ensure counts stay accurate
+						Post updatedPost = service.getPostById(post.getPostID());
+						post.setLikeCount(updatedPost.getLikeCount());
+						post.setDislikeCount(updatedPost.getDislikeCount());
+						post.setCommentCount(updatedPost.getCommentCount());
+					} else {
+						System.out.println("No interaction to remove.");
+					}
+					break;
+				case "4":
+					System.out.print("Your comment: ");
+					String text = scanner.nextLine().trim();
+					if (service.insertComment(post.getPostID(), currentUser.getUserID(), text)) {
+						System.out.println("Comment added!");
+						// Optional: Update local post comment count to reflect new comment
+						post.setCommentCount(post.getCommentCount() + 1);
+					}
+					break;
+				case "5":
+					if (comments == null || comments.isEmpty())
+						break;
+					System.out.print("Select Comment number: ");
+					try {
+						int cIdx = Integer.parseInt(scanner.nextLine().trim()) - 1;
+						if (cIdx >= 0 && cIdx < comments.size()) {
+							Comment selectedComm = comments.get(cIdx);
+							System.out.println("1. Like | 2. Dislike | 3. Remove Interaction");
+							String action = scanner.nextLine().trim();
+
+							if (action.equals("1")) {
+								service.likeComment(selectedComm.getCommentID(), currentUser.getUserID());
+							} else if (action.equals("2")) {
+								service.dislikeComment(selectedComm.getCommentID(), currentUser.getUserID());
+							} else if (action.equals("3")) {
+								service.clearCommentInteraction(selectedComm.getCommentID(), currentUser.getUserID());
+							}
+						}
+					} catch (Exception e) {
+						System.out.println("Invalid selection.");
+					}
+					break;
+				case "6":
+					interacting = false;
+					break;
+				default:
+					System.out.println("Invalid option.");
+			}
+		}
 	}
 
-	public List<User> filterRecommendationsByGame(List<User> recommendations, String game) {
-		return service.filterRecommendationsByGame(recommendations, game);
+	private void showFriendsTab() {
+		boolean inTab = true;
+		while (inTab) {
+			System.out.println("\n--- FRIENDS TAB ---");
+			System.out.println("1. View Online Friends");
+			System.out.println("2. Send Notification to Friend");
+			System.out.println("3. Add Friend");
+			System.out.println("4. View Incoming Friend Requests");
+			System.out.println("5. Remove Friend");
+			System.out.println("6. View Groups");
+			System.out.println("7. Create Group");
+			System.out.println("8. Back to Dashboard");
+			System.out.print("Choose an option: ");
+
+			String choice = scanner.nextLine().trim();
+			switch (choice) {
+				case "1":
+					System.out.println("\n--- ONLINE FRIENDS ---");
+    				List<User> onlineFriends = service.getOnlineFriends(currentUser.getUserID());
+    				if (onlineFriends == null || onlineFriends.isEmpty()) {
+        				System.out.println("None of your friends are currently online.");
+   					} else {
+        				System.out.println(onlineFriends.size() + " friend(s) online:");
+        				for (User friend : onlineFriends) {
+            				System.out.println("  - " + friend.getUsername());
+        				}
+    				}
+    				break;
+				case "2":
+					System.out.println("\n--- SEND EMAIL PING TO FRIEND ---");
+    				List<User> onlineFriendsList = service.getOnlineFriends(currentUser.getUserID());
+    				List<User> offlineFriendsList = service.getOfflineFriends(currentUser.getUserID());
+
+    				if ((onlineFriendsList == null || onlineFriendsList.isEmpty()) &&
+        				(offlineFriendsList == null || offlineFriendsList.isEmpty())) {
+        				System.out.println("You have no friends to ping.");
+        				break;
+    				}
+
+    				// Merge both lists and display with indicators
+    				List<User> allFriends = new ArrayList<>();
+    				allFriends.addAll(onlineFriendsList);
+    				allFriends.addAll(offlineFriendsList);
+
+    				char pingLetter = 'A';
+    				for (User friend : allFriends) {
+        				boolean isOnline = onlineFriendsList.contains(friend);
+        				String indicator = isOnline ? "🟢 Online" : "⚫ Offline";
+        				System.out.println(pingLetter + ". " + friend.getUsername() + " " + indicator);
+        				pingLetter++;
+    				}
+
+    				System.out.println("\nEnter the letter or username of the friend you want to ping:");
+    				String friendChoice = scanner.nextLine().trim();
+
+    				// Find the selected friend
+    				User selectedFriend = null;
+    				if (friendChoice.length() == 1 && Character.isLetter(friendChoice.charAt(0))) {
+        				int index = Character.toUpperCase(friendChoice.charAt(0)) - 'A';
+        				if (index >= 0 && index < allFriends.size()) {
+            				selectedFriend = allFriends.get(index);
+        				}
+    				} else {
+        				for (User friend : allFriends) {
+            				if (friend.getUsername().equalsIgnoreCase(friendChoice)) {
+                				selectedFriend = friend;
+                				break;
+            				}
+        				}
+    				}
+
+    				if (selectedFriend == null) {
+        				System.out.println("❌ Friend not found.");
+        				break;
+    				}
+
+    				service.sendEmailPingToFriend(currentUser, selectedFriend);
+					break;
+				case "3":
+					System.out.print("\nEnter username to add: ");
+					String addTarget = scanner.nextLine().trim();
+					User targetUser = service.getUserByUsername(addTarget);
+					if (targetUser == null) {
+						System.out.println("User '" + addTarget + "' not found.");
+						break;
+					}
+					if (targetUser.getUserID() == currentUser.getUserID()) {
+						System.out.println("You cannot send a friend request to yourself.");
+						break;
+					}
+					boolean requestSent = service.insertFriendRequest(currentUser.getUserID(), targetUser.getUserID());
+					if (requestSent) {
+						System.out.println("Friend request sent to " + addTarget + "!");
+					} else {
+						System.out.println("Failed to send friend request to " + addTarget + ".");
+					}
+					break;
+				case "4":
+					System.out.println("\n--- INCOMING FRIEND REQUESTS ---");
+					List<User> pendingRequests = service.getIncomingFriendRequests(currentUser.getUserID());
+					if (pendingRequests == null || pendingRequests.isEmpty()) {
+						System.out.println("You have no incoming friend requests right now.");
+					} else {
+						for (User sender : pendingRequests) {
+							System.out.println("\nRequest from: " + sender.getUsername());
+							System.out.print("Do you want to accept? (yes/no/skip): ");
+							String answer = scanner.nextLine().trim().toLowerCase();
+							if (answer.equals("yes")) {
+								if (service.acceptFriendRequest(currentUser.getUserID(), sender.getUserID())) {
+									System.out.println(
+											"Accepted! You are now friends with " + sender.getUsername() + ".");
+								} else {
+									System.out.println("Error accepting request.");
+								}
+							} else if (answer.equals("no")) {
+								if (service.declineFriendRequest(currentUser.getUserID(), sender.getUserID())) {
+									System.out.println("Request declined.");
+								} else {
+									System.out.println("Error declining request.");
+								}
+							} else {
+								System.out.println("Skipped.");
+							}
+						}
+					}
+					break;
+				case "5":
+                    System.out.print("\nEnter username to remove: ");
+                    String removeTarget = scanner.nextLine().trim();
+                    
+                    // 1. Find the target user by username
+                    User userToRemove = service.getUserByUsername(removeTarget);
+                    if (userToRemove == null) {
+                        System.out.println("User '" + removeTarget + "' not found.");
+                        break;
+                    }
+
+                    // 2. Prevent removing yourself
+                    if (userToRemove.getUserID() == currentUser.getUserID()) {
+                        System.out.println("You cannot remove yourself from your friends list.");
+                        break;
+                    }
+
+                    // 3. Call the service to remove the friend
+                    System.out.println("Removing " + removeTarget + " from friends list...");
+                    boolean isRemoved = service.removeFriend(currentUser.getUserID(), userToRemove.getUserID());
+                    
+                    if (isRemoved) {
+                        System.out.println("✅ Successfully removed " + removeTarget + " from your friends list.");
+                    } else {
+                        System.out.println("❌ Failed to remove " + removeTarget + ". Are you sure you are friends?");
+                    }
+                    break;
+				case "6":
+					System.out.println("\n[Feature: View Groups]");
+					break;
+				case "7":
+					System.out.println("\n[Feature: Create Group]");
+					break;
+				case "8":
+					inTab = false;
+					break;
+				default:
+					System.out.println("Invalid option. Please choose 1-8.");
+			}
+		}
 	}
 
-	public void sendEmailPingToFriend(User sender, User friend) {
-		service.sendEmailPingToFriend(sender, friend);
+	private void showFindGamersTab() {
+		boolean inTab = true;
+		while (inTab) {
+			System.out.println("\n--- FIND GAMERS TAB ---");
+			System.out.println("1. Start Queue");
+			System.out.println("2. Apply Filters (Games, Genres, Age)");
+			System.out.println("3. Back to Dashboard");
+			System.out.print("Choose an option: ");
+			String choice = scanner.nextLine().trim();
+			switch (choice) {
+				case "1":
+					System.out.println("\n[Feature: Starting Matchmaking Queue...] Looking for gamers!");
+					break;
+				case "2":
+					System.out.println("\n--- APPLY FILTERS ---");
+					System.out.print("Filter by Game (leave blank to skip): ");
+					String gameFilter = scanner.nextLine().trim();
+					System.out.print("Filter by Genre (leave blank to skip): ");
+					String genreFilter = scanner.nextLine().trim();
+					System.out.print("Filter by Max Age (leave blank to skip): ");
+					String ageFilter = scanner.nextLine().trim();
+					System.out.println("Filters applied! Game: [" + gameFilter + "], Genre: [" + genreFilter
+							+ "], Max Age: [" + ageFilter + "]");
+					break;
+				case "3":
+					inTab = false;
+					break;
+				default:
+					System.out.println("Invalid option.");
+			}
+		}
 	}
 
-	public void sendEmailPingToGroup(User sender, Group group) {
-		service.sendEmailPingToGroup(sender, group);
-	}
+	private boolean showProfileSettingsTab() {
+		boolean inTab = true;
+		while (inTab) {
+			System.out.println("\n--- PROFILE SETTINGS ---");
+			System.out.println("1. View My Posts");
+			System.out.println("2. Edit Profile Information");
+			System.out.println("3. Delete Account");
+			System.out.println("4. Back to Dashboard");
+			System.out.print("Choose an option: ");
 
-	public void createAccount(String username, String email, String password, int age, List<String> games) {
-		service.createAccount(username, email, password, age, games);
-	}
-
-	public void login(String username, String password) {
-		service.login(username, password);
-	}
-
-	public void logout() {
-		service.logout();
-	}
-
-	public void deleteAccount() {
-		service.deleteAccount();
-	}
-
-	public void updateProfile(String bio, List<String> favoriteGames) {
-		service.updateProfile(bio, favoriteGames);
-	}
-
-	public void blockUser(User userToBlock) {
-		service.blockUser(userToBlock);
-	}
-
-	public void addMember(User user) {
-		service.addMember(user);
-	}
-
-	public void createPost(Community community, User author, String textContent) {
-		service.createPost(community, author, textContent);
-	}
-
-	public Post likePost(Post post) {
-		return service.likePost(post);
-	}
-
-	public Post dislikePost(Post post) {
-		return service.dislikePost(post);
-	}
-
-	public void createComment(Post parentPost, User author, String textContent) {
-		service.createComment(parentPost, author, textContent);
-	}
-
-	public void likeComment(Comment comment) {
-		service.likeComment(comment);
-	}
-
-	public void dislikeComment(Comment comment) {
-		service.dislikeComment(comment);
+			String choice = scanner.nextLine().trim();
+			switch (choice) {
+				case "1":
+					List<Post> myPosts = service.retrieveUserPosts(currentUser);
+					if (myPosts == null || myPosts.isEmpty()) {
+						System.out.println("You haven't made any posts yet.");
+					} else {
+						System.out.println("\n--- My Posts ---");
+						for (Post post : myPosts) {
+							System.out.println("Post ID: " + post.getPostID());
+							System.out.println("Content: " + post.getTextContent());
+							System.out.println(
+									"Likes: " + post.getLikeCount() + " | Dislikes: " + post.getDislikeCount());
+							System.out.println("-------------------");
+						}
+					}
+					break;
+				case "2":
+					System.out.println("\n--- EDIT PROFILE ---");
+					System.out.println("Leave a field blank and press Enter to keep current value.");
+					System.out.print("Update Bio (Current: " + currentUser.getBio() + "): ");
+					String newBio = scanner.nextLine().trim();
+					if (!newBio.isEmpty()) {
+						currentUser.setBio(newBio);
+					}
+					System.out.print("Update Age (Current: " + currentUser.getAge() + "): ");
+					String newAgeStr = scanner.nextLine().trim();
+					if (!newAgeStr.isEmpty()) {
+						try {
+							currentUser.setAge(Integer.parseInt(newAgeStr));
+						} catch (NumberFormatException e) {
+							System.out.println("Invalid age format. Keeping old age.");
+						}
+					}
+					if (service.updateUserProfile(currentUser)) {
+						System.out.println("Profile updated successfully!");
+					} else {
+						System.out.println("Failed to update profile.");
+					}
+					break;
+				case "3":
+					System.out.println("\n--- DELETE ACCOUNT ---");
+					System.out.print(
+							"Are you SURE you want to delete your account? This cannot be undone! (type 'yes' to confirm): ");
+					String confirm = scanner.nextLine().trim().toLowerCase();
+					if (confirm.equals("yes")) {
+						if (service.deleteUser(currentUser.getUserID())) {
+							System.out.println("Account deleted successfully. We're sad to see you go!");
+							currentUser = null;
+							return true;
+						} else {
+							System.out.println("Error: Could not delete account.");
+						}
+					} else {
+						System.out.println("Account deletion cancelled.");
+					}
+					break;
+				case "4":
+					inTab = false;
+					break;
+				default:
+					System.out.println("Invalid option.");
+			}
+		}
+		return false;
 	}
 }
