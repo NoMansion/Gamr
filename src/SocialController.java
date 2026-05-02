@@ -601,10 +601,32 @@ public class SocialController {
 					}
 					break;
 				case "5":
-					System.out.print("\nEnter username to remove: ");
-					String removeTarget = scanner.nextLine().trim();
-					System.out.println("Removing " + removeTarget + " from friends list...");
-					break;
+                    System.out.print("\nEnter username to remove: ");
+                    String removeTarget = scanner.nextLine().trim();
+                    
+                    // 1. Find the target user by username
+                    User userToRemove = service.getUserByUsername(removeTarget);
+                    if (userToRemove == null) {
+                        System.out.println("User '" + removeTarget + "' not found.");
+                        break;
+                    }
+
+                    // 2. Prevent removing yourself
+                    if (userToRemove.getUserID() == currentUser.getUserID()) {
+                        System.out.println("You cannot remove yourself from your friends list.");
+                        break;
+                    }
+
+                    // 3. Call the service to remove the friend
+                    System.out.println("Removing " + removeTarget + " from friends list...");
+                    boolean isRemoved = service.removeFriend(currentUser.getUserID(), userToRemove.getUserID());
+                    
+                    if (isRemoved) {
+                        System.out.println("✅ Successfully removed " + removeTarget + " from your friends list.");
+                    } else {
+                        System.out.println("❌ Failed to remove " + removeTarget + ". Are you sure you are friends?");
+                    }
+                    break;
 				case "6":
 					System.out.println("\n[Feature: View Groups]");
 					break;

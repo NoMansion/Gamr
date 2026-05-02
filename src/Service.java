@@ -318,4 +318,8 @@ public List<User> getOnlineFriends(int userID) {
 public List<User> getOfflineFriends(int userID) {
     return dbOp.getOfflineFriends(userID);
 }
+public boolean removeFriend(int currentUserId, int targetUserId) {
+        // Assuming your SQLOperation instance is named 'sqlOperation'
+        return dbOp.removeFriend(currentUserId, targetUserId);
+    }
 }
