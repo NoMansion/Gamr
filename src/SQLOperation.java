@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -133,11 +134,20 @@ public class SQLOperation implements DBOperation {
         Connection conn = dbConnection.getConnection();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
             pstmt.setInt(1, senderId);
             pstmt.setInt(2, receiverId);
             return pstmt.executeUpdate() > 0;
+
+        } catch (SQLIntegrityConstraintViolationException e) {
+            // Specifically catches the ORA-00001 (Duplicate Entry) error silently
+            System.out.println("A friend request has already been sent to this user.");
+            return false;
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            // Catches any other unexpected database errors
+            System.err.println("Database error occurred while sending friend request: " + e.getMessage());
+            e.printStackTrace(); // Keep this here to debug other types of SQL failures
             return false;
         }
     }
