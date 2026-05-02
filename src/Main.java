@@ -17,12 +17,12 @@ public class Main {
         // 1. Initialize the Database Connection
         System.out.println("Initializing system...");
         DatabaseConnection dbConnection = ConnectionFactory.createConnection("SQL");
-        
+
         if (dbConnection == null || dbConnection.getConnection() == null) {
             System.out.println("Fatal Error: Could not connect to the database. Exiting application.");
             return;
         }
-        
+
         // Inject the connection into our SQL operations
         dbOps = new SQLOperation(dbConnection);
 
@@ -74,7 +74,7 @@ public class Main {
 
         System.out.print("Enter password: ");
         // Storing directly for now. In a real app, hash this before setting!
-        newUser.setPasswordHash(scanner.nextLine().trim()); 
+        newUser.setPasswordHash(scanner.nextLine().trim());
 
         System.out.print("Enter age: ");
         try {
@@ -91,17 +91,17 @@ public class Main {
         System.out.print("Enter favorite games (comma-separated): ");
         String gamesInput = scanner.nextLine();
         List<String> gamesList = Arrays.stream(gamesInput.split(","))
-                                       .map(String::trim)
-                                       .filter(s -> !s.isEmpty())
-                                       .collect(Collectors.toList());
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
         newUser.setFavoriteGames(gamesList);
 
         System.out.print("Enter favorite genres (comma-separated): ");
         String genresInput = scanner.nextLine();
         List<String> genresList = Arrays.stream(genresInput.split(","))
-                                        .map(String::trim)
-                                        .filter(s -> !s.isEmpty())
-                                        .collect(Collectors.toList());
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
         newUser.setFavoriteGenres(genresList);
 
         // Attempt to save to database
@@ -110,7 +110,8 @@ public class Main {
         if (success) {
             System.out.println("\nAccount created successfully! Welcome, " + newUser.getUsername() + ".");
             System.out.println("Please log in with your new credentials.");
-            // Returning here drops them back to the Main Menu so they can select "1. Log In"
+            // Returning here drops them back to the Main Menu so they can select "1. Log
+            // In"
         } else {
             System.out.println("\nFailed to create account. That username or email might already be taken.");
         }
@@ -129,7 +130,7 @@ public class Main {
         if (loggedInUser != null) {
             System.out.println("\nLogin successful! Welcome back, " + loggedInUser.getUsername() + "!");
             // Transition to the main dashboard!
-            showUserDashboard(loggedInUser); 
+            showUserDashboard(loggedInUser);
         } else {
             System.out.println("\nLogin failed. Incorrect email or password.");
         }
@@ -153,10 +154,16 @@ public class Main {
             String choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1": showCommunityTab(user); break;
-                case "2": showFriendsTab(user); break;
-                case "3": showFindGamersTab(user); break;
-                case "4": 
+                case "1":
+                    showCommunityTab(user);
+                    break;
+                case "2":
+                    showFriendsTab(user);
+                    break;
+                case "3":
+                    showFindGamersTab(user);
+                    break;
+                case "4":
                     // If this returns true, the user deleted their account, so we log them out.
                     boolean accountDeleted = showProfileSettingsTab(user);
                     if (accountDeleted) {
@@ -180,8 +187,8 @@ public class Main {
         boolean inTab = true;
         while (inTab) {
             System.out.println("\n--- COMMUNITY TAB ---");
-            System.out.println("1. Search for Communities");
-            System.out.println("2. View Joined Communities");
+            System.out.println("1. Discover & Search Communities");
+            System.out.println("2. View Joined Communities"); // UPDATE THIS SECTION
             System.out.println("3. Back to Dashboard");
             System.out.print("Choose an option: ");
 
@@ -189,10 +196,96 @@ public class Main {
 
             switch (choice) {
                 case "1":
+                    showCommunitySearchMenu(user);
+                    break;
+                case "2":
+                    System.out.println("\n[Fetching your communities...]");
+                    List<Community> joinedComms = dbOps.getJoinedCommunities(user.getUserID());
+
+                    if (joinedComms == null || joinedComms.isEmpty()) {
+                        System.out.println("You haven't joined any communities yet! Try discovering some first.");
+                    } else {
+                        System.out.println("\n--- My Communities ---");
+                        for (int i = 0; i < joinedComms.size(); i++) {
+                            System.out.println((i + 1) + ". " + joinedComms.get(i).getName());
+                        }
+                        System.out.print("Select a community to view (1-" + joinedComms.size() + ") or 0 to cancel: ");
+
+                        try {
+                            int selection = Integer.parseInt(scanner.nextLine().trim());
+                            if (selection > 0 && selection <= joinedComms.size()) {
+                                // Jump into the specific community view
+                                viewJoinedCommunity(joinedComms.get(selection - 1), user);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid selection. Returning to menu.");
+                        }
+                    }
+                    break;
+                case "3":
+                    inTab = false;
+                    break;
+                default:
+                    System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    // --- NEW SEARCH MENU ---
+    // --- UPDATED SEARCH MENU ---
+    private static void showCommunitySearchMenu(User user) {
+        boolean searching = true;
+
+        while (searching) {
+            System.out.println("\n--- DISCOVER COMMUNITIES ---");
+            System.out.println("1. Discover Random Community (Surprise me!)");
+            System.out.println("2. Discover Random Community by Genre");
+            System.out.println("3. Search by Exact Name");
+            System.out.println("4. Back to Community Tab");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    boolean rollingRandom = true;
+                    while (rollingRandom) {
+                        System.out.println("\n[Fetching community...]");
+                        Community randomComm = dbOps.getRandomCommunity();
+                        if (randomComm != null) {
+                            boolean stop = interactWithCommunity(randomComm, user);
+                            if (stop)
+                                rollingRandom = false;
+                        } else {
+                            System.out.println("No communities found in the database!");
+                            rollingRandom = false;
+                        }
+                    }
+                    break;
+
+                case "2":
+                    System.out.print("\nEnter a genre (e.g., RPG, Shooter, MMO): ");
+                    String genre = scanner.nextLine().trim();
+                    boolean rollingGenre = true;
+
+                    while (rollingGenre) {
+                        System.out.println("\n[Fetching " + genre + " community...]");
+                        Community genreComm = dbOps.getRandomCommunityByGenre(genre);
+
+                        if (genreComm != null) {
+                            boolean stop = interactWithCommunity(genreComm, user);
+                            if (stop)
+                                rollingGenre = false;
+                        } else {
+                            System.out.println("No communities found for the genre: " + genre);
+                            rollingGenre = false;
+                        }
+                    }
+                    break;
+
+                case "3":
                     System.out.print("\nEnter community name to search: ");
                     String searchQuery = scanner.nextLine().trim();
-                    
-                    // Fetch results from the database layer
                     List<Community> searchResults = dbOps.getCommunitiesByName(searchQuery);
 
                     if (searchResults == null || searchResults.isEmpty()) {
@@ -200,20 +293,164 @@ public class Main {
                     } else {
                         System.out.println("\n--- Search Results ---");
                         for (int i = 0; i < searchResults.size(); i++) {
-                            Community c = searchResults.get(i);
-                            // Assuming Community class has getName() and getGenres() as per the diagram
-                            System.out.println((i + 1) + ". " + c.getName() + " | Genres: " + String.join(", ", c.getGenres()));
+                            System.out.println((i + 1) + ". " + searchResults.get(i).getName());
+                        }
+                        System.out
+                                .print("Select a community to view (1-" + searchResults.size() + ") or 0 to cancel: ");
+
+                        try {
+                            int selection = Integer.parseInt(scanner.nextLine().trim());
+                            if (selection > 0 && selection <= searchResults.size()) {
+                                interactWithCommunity(searchResults.get(selection - 1), user);
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid selection. Returning to menu.");
                         }
                     }
                     break;
-                case "2":
-                    System.out.println("\n[Feature: View Joined Communities] - Fetching from DB...");
+
+                case "4":
+                    searching = false;
                     break;
-                case "3":
-                    inTab = false;
-                    break;
+
                 default:
                     System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    // --- NEW METHOD TO HANDLE VIEWING AND JOINING ---
+    // --- UPDATED METHOD TO HANDLE VIEWING AND JOINING ---
+    // Returns true to exit back to the menu, or false to skip and view another
+    private static boolean interactWithCommunity(Community c, User user) {
+        boolean viewing = true;
+
+        while (viewing) {
+            System.out.println("\n=================================");
+            System.out.println(" COMMUNITY: " + c.getName());
+            System.out.println(" GENRES: " + String.join(", ", c.getGenres()));
+            System.out.println("=================================");
+            System.out.println("1. Join Community");
+            System.out.println("2. Skip (Show Next Community)");
+            System.out.println("3. Exit to Search Menu");
+            System.out.print("Action: ");
+
+            String choice = scanner.nextLine().trim();
+
+            if (choice.equals("1")) {
+                boolean success = dbOps.joinCommunity(user.getUserID(), c.getCommunityID());
+                if (success) {
+                    System.out.println("\n>>> Success! You are now a member of " + c.getName() + "!");
+                } else {
+                    System.out.println("\n>>> Failed to join. You might already be a member of this community.");
+                }
+                return true; // Stop searching, kick them back to menu after joining
+            } else if (choice.equals("2")) {
+                return false; // Tells the search loop to fetch another community
+            } else if (choice.equals("3")) {
+                return true; // Stop searching, kick them back to menu
+            } else {
+                System.out.println("Invalid choice.");
+            }
+        }
+        return true;
+    }
+
+    // --- UPDATED METHOD FOR VIEWING A SPECIFIC COMMUNITY ---
+    private static void viewJoinedCommunity(Community c, User user) {
+        boolean viewing = true;
+
+        while (viewing) {
+            System.out.println("\n=================================");
+            System.out.println(" 🌟 " + c.getName().toUpperCase() + " 🌟 ");
+            System.out.println("=================================");
+
+            // Show recent posts
+            List<Post> recentPosts = dbOps.getCommunityPosts(c.getCommunityID());
+            if (recentPosts == null || recentPosts.isEmpty()) {
+                System.out.println("It's quiet here... Be the first to post!");
+            } else {
+                // Sort posts by like count in descending order
+                recentPosts.sort((p1, p2) -> Integer.compare(p2.getLikeCount(), p1.getLikeCount()));
+
+                for (Post p : recentPosts) {
+                    System.out.println("Post ID [" + p.getPostID() + "] | 👍 " + p.getLikeCount() + " | 👎 "
+                            + p.getDislikeCount());
+                    System.out.println("💬 " + p.getTextContent());
+                    System.out.println("---------------------------------");
+                }
+            }
+
+            System.out.println("\n1. Make a New Post");
+            System.out.println("2. Like a Post");
+            System.out.println("3. Dislike a Post");
+            System.out.println("4. Clear Like/Dislike"); // Add this line!
+            System.out.println("5. Back to Communities"); // Update this to 5
+            System.out.print("Action: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    System.out.println("\n--- NEW POST ---");
+                    System.out.print("What's on your mind? (Type your post and press Enter):\n> ");
+                    String content = scanner.nextLine().trim();
+
+                    if (!content.isEmpty()) {
+                        boolean success = dbOps.createPost(c.getCommunityID(), user.getUserID(), content);
+                        if (success) {
+                            System.out.println("✅ Post published successfully!");
+                        } else {
+                            System.out.println("❌ Failed to publish post.");
+                        }
+                    } else {
+                        System.out.println("Post cancelled (cannot be empty).");
+                    }
+                    break;
+                case "2":
+                    System.out.print("Enter the Post ID to Like: ");
+                    try {
+                        int postId = Integer.parseInt(scanner.nextLine().trim());
+                        if (dbOps.likePost(postId, user.getUserID())) {
+                            System.out.println("✅ Post liked!");
+                        } else {
+                            System.out.println("❌ Failed to like post. (You may have already voted)");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Please enter a valid Post ID number.");
+                    }
+                    break;
+                case "3":
+                    System.out.print("Enter the Post ID to Dislike: ");
+                    try {
+                        int postId = Integer.parseInt(scanner.nextLine().trim());
+                        if (dbOps.dislikePost(postId, user.getUserID())) {
+                            System.out.println("✅ Post disliked!");
+                        } else {
+                            System.out.println("❌ Failed to dislike post. (You may have already voted)");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Please enter a valid Post ID number.");
+                    }
+                    break;
+                case "4": 
+                    System.out.print("Enter the Post ID to clear your Like/Dislike: ");
+                    try {
+                        int postId = Integer.parseInt(scanner.nextLine().trim());
+                        if (dbOps.clearInteraction(postId, user.getUserID())) {
+                            System.out.println("✅ Interaction cleared!");
+                        } else {
+                            System.out.println("❌ Nothing to clear for this post.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input.");
+                    }
+                    break;
+                case "5":
+                    viewing = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
             }
         }
     }
@@ -266,7 +503,7 @@ public class Main {
                 case "4":
                     System.out.println("\n--- INCOMING FRIEND REQUESTS ---");
                     List<User> pendingRequests = dbOps.getIncomingFriendRequests(user.getUserID());
-                    
+
                     if (pendingRequests == null || pendingRequests.isEmpty()) {
                         System.out.println("You have no incoming friend requests right now.");
                     } else {
@@ -274,10 +511,11 @@ public class Main {
                             System.out.println("\nRequest from: " + sender.getUsername());
                             System.out.print("Do you want to accept? (yes/no/skip): ");
                             String answer = scanner.nextLine().trim().toLowerCase();
-                            
+
                             if (answer.equals("yes")) {
                                 if (dbOps.acceptFriendRequest(user.getUserID(), sender.getUserID())) {
-                                    System.out.println("Accepted! You are now friends with " + sender.getUsername() + ".");
+                                    System.out.println(
+                                            "Accepted! You are now friends with " + sender.getUsername() + ".");
                                 } else {
                                     System.out.println("Error accepting request.");
                                 }
@@ -335,14 +573,15 @@ public class Main {
                     System.out.println("\n--- APPLY FILTERS ---");
                     System.out.print("Filter by Game (leave blank to skip): ");
                     String gameFilter = scanner.nextLine().trim();
-                    
+
                     System.out.print("Filter by Genre (leave blank to skip): ");
                     String genreFilter = scanner.nextLine().trim();
-                    
+
                     System.out.print("Filter by Max Age (leave blank to skip): ");
                     String ageFilter = scanner.nextLine().trim();
 
-                    System.out.println("Filters applied! Game: [" + gameFilter + "], Genre: [" + genreFilter + "], Max Age: [" + ageFilter + "]");
+                    System.out.println("Filters applied! Game: [" + gameFilter + "], Genre: [" + genreFilter
+                            + "], Max Age: [" + ageFilter + "]");
                     break;
                 case "3":
                     inTab = false;
@@ -352,12 +591,13 @@ public class Main {
             }
         }
     }
+
     // ==========================================
     // 4. PROFILE SETTINGS
     // ==========================================
     private static boolean showProfileSettingsTab(User user) {
         boolean inTab = true;
-        
+
         while (inTab) {
             System.out.println("\n--- PROFILE SETTINGS ---");
             System.out.println("1. View My Posts");
@@ -372,7 +612,7 @@ public class Main {
                 case "1":
                     System.out.println("\n[Fetching your posts...]");
                     List<Post> myPosts = dbOps.getPostsByUserID(user.getUserID());
-                    
+
                     if (myPosts == null || myPosts.isEmpty()) {
                         System.out.println("You haven't made any posts yet.");
                     } else {
@@ -389,10 +629,11 @@ public class Main {
                 case "2":
                     System.out.println("\n--- EDIT PROFILE ---");
                     System.out.println("Leave a field blank and press Enter to keep current value.");
-                    
+
                     System.out.print("Update Bio (Current: " + user.getBio() + "): ");
                     String newBio = scanner.nextLine().trim();
-                    if (!newBio.isEmpty()) user.setBio(newBio);
+                    if (!newBio.isEmpty())
+                        user.setBio(newBio);
 
                     System.out.print("Update Age (Current: " + user.getAge() + "): ");
                     String newAgeStr = scanner.nextLine().trim();
@@ -413,9 +654,10 @@ public class Main {
 
                 case "3":
                     System.out.println("\n--- DELETE ACCOUNT ---");
-                    System.out.print("Are you SURE you want to delete your account? This cannot be undone! (type 'yes' to confirm): ");
+                    System.out.print(
+                            "Are you SURE you want to delete your account? This cannot be undone! (type 'yes' to confirm): ");
                     String confirm = scanner.nextLine().trim().toLowerCase();
-                    
+
                     if (confirm.equals("yes")) {
                         if (dbOps.deleteUser(user.getUserID())) {
                             System.out.println("Account deleted successfully. We're sad to see you go!");

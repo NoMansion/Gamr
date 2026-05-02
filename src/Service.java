@@ -160,11 +160,6 @@ public class Service {
     // 5. POSTS & COMMENTS
     // ==========================================
 
-    public void createPost(Community community, User author, String textContent) {
-        Post newPost = new Post(-1, author, community, textContent, 0, 0, new ArrayList<>());
-        dbOp.insertPost(newPost);
-    }
-
     public List<Post> retrieveUserPosts(User user) {
         return dbOp.getPostsByUserID(user.getUserID());
     }
@@ -225,5 +220,30 @@ public class Service {
     // Getter for controllers to use
     public User getCurrentUser() {
         return this.currentUser;
+    }
+
+    public List<Community> getJoinedCommunities(User user) {
+        if (user == null || user.getUserID() <= 0) return new ArrayList<>();
+        return dbOp.getJoinedCommunities(user.getUserID());
+    }
+
+    public List<Post> getCommunityPosts(Community community) {
+        if (community == null || community.getCommunityID() <= 0) return new ArrayList<>();
+        return dbOp.getCommunityPosts(community.getCommunityID());
+    }
+
+    public void createPost(Community community, User author, String textContent) {
+        // Business logic: don't allow empty posts!
+        if (textContent == null || textContent.trim().isEmpty()) {
+            System.out.println("Error: Post content cannot be empty.");
+            return;
+        }
+        
+        boolean success = dbOp.createPost(community.getCommunityID(), author.getUserID(), textContent);
+        if (success) {
+            System.out.println("✅ Post published successfully to " + community.getName() + "!");
+        } else {
+            System.out.println("❌ Failed to publish post.");
+        }
     }
 }

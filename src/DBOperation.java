@@ -24,4 +24,13 @@ public interface DBOperation {
     List<User> getIncomingFriendRequests(int userID);
     boolean acceptFriendRequest(int userID, int senderID);
     boolean declineFriendRequest(int userID, int senderID);
+    Community getRandomCommunity();
+    Community getRandomCommunityByGenre(String genre);
+    boolean joinCommunity(int userId, int communityId);
+    List<Community> getJoinedCommunities(int userId);
+    List<Post> getCommunityPosts(int communityId);
+    boolean createPost(int communityId, int authorId, String textContent);
+    boolean likePost(int postId, int userId);
+    boolean dislikePost(int postId, int userId);
+    boolean clearInteraction(int postId, int userId);
 }

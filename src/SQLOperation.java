@@ -514,4 +514,294 @@ public class SQLOperation implements DBOperation {
             return false;
         }
     }
+
+    @Override
+    public Community getRandomCommunity() {
+        // Oracle syntax to grab exactly 1 random row
+        String sql = "SELECT * FROM Communities ORDER BY DBMS_RANDOM.VALUE FETCH NEXT 1 ROWS ONLY";
+        return fetchSingleCommunity(sql, null);
+    }
+
+    @Override
+    public Community getRandomCommunityByGenre(String genre) {
+        String sql = "SELECT * FROM Communities WHERE LOWER(GENRES) LIKE LOWER(?) ORDER BY DBMS_RANDOM.VALUE FETCH NEXT 1 ROWS ONLY";
+        return fetchSingleCommunity(sql, "%" + genre + "%");
+    }
+
+    // --- HELPER METHOD TO PREVENT CODE DUPLICATION ---
+    private Community fetchSingleCommunity(String sql, String searchParam) {
+        Connection conn = dbConnection.getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            if (searchParam != null) {
+                pstmt.setString(1, searchParam);
+            }
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    Community c = new Community();
+                    c.setCommunityID(rs.getInt("COMMUNITY_ID"));
+                    c.setName(rs.getString("NAME"));
+                    
+                    String genresRaw = rs.getString("GENRES");
+                    if (genresRaw != null && !genresRaw.trim().isEmpty()) {
+                        c.setGenres(new ArrayList<>(Arrays.asList(genresRaw.split("\\s*,\\s*"))));
+                    } else {
+                        c.setGenres(new ArrayList<>());
+                    }
+                    return c;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching community: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public boolean joinCommunity(int userId, int communityId) {
+        String sql = "INSERT INTO CommunityMembers (COMMUNITY_ID, USER_ID) VALUES (?, ?)";
+        Connection conn = dbConnection.getConnection();
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, communityId);
+            pstmt.setInt(2, userId);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            // If the user is already in the community, the Primary Key constraint will throw an error here.
+            // We catch it and return false instead of crashing the program.
+            return false;
+        }
+    }
+
+    @Override
+    public List<Community> getJoinedCommunities(int userId) {
+        List<Community> communities = new ArrayList<>();
+        Connection conn = dbConnection.getConnection();
+        
+        // This query joins Communities with CommunityMembers to find what the user joined
+        String sql = "SELECT c.* FROM Communities c " +
+                     "JOIN CommunityMembers cm ON c.COMMUNITY_ID = cm.COMMUNITY_ID " +
+                     "WHERE cm.USER_ID = ?";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Community c = new Community();
+                    c.setCommunityID(rs.getInt("COMMUNITY_ID"));
+                    c.setName(rs.getString("NAME"));
+                    
+                    String genresRaw = rs.getString("GENRES");
+                    if (genresRaw != null && !genresRaw.trim().isEmpty()) {
+                        c.setGenres(new ArrayList<>(Arrays.asList(genresRaw.split("\\s*,\\s*"))));
+                    } else {
+                        c.setGenres(new ArrayList<>());
+                    }
+                    communities.add(c);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching joined communities: " + e.getMessage());
+        }
+        return communities;
+    }
+
+    @Override
+    public List<Post> getCommunityPosts(int communityId) {
+        List<Post> posts = new ArrayList<>();
+        Connection conn = dbConnection.getConnection();
+        
+        // Fetch posts for this community, newest first (ORDER BY POST_ID DESC)
+        String sql = "SELECT * FROM Posts WHERE COMMUNITY_ID = ? ORDER BY POST_ID DESC";
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, communityId);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Post p = new Post();
+                    p.setPostID(rs.getInt("POST_ID"));
+                    p.setTextContent(rs.getString("TEXT_CONTENT"));
+                    p.setLikeCount(rs.getInt("LIKES_COUNT"));
+                    p.setDislikeCount(rs.getInt("DISLIKES_COUNT"));
+                    // You could also fetch the Author's username here using a JOIN if you want!
+                    posts.add(p);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching posts: " + e.getMessage());
+        }
+        return posts;
+    }
+
+    public boolean createPost(int communityId, int authorId, String textContent) {
+        String sql = "INSERT INTO POSTS (COMMUNITY_ID, AUTHOR_ID, TEXT_CONTENT, LIKES_COUNT, DISLIKES_COUNT) VALUES (?, ?, ?, ?, ?)";
+        
+        // MOVED OUTSIDE
+        Connection conn = dbConnection.getConnection(); 
+        
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, communityId);
+            pstmt.setInt(2, authorId);
+            pstmt.setString(3, textContent);
+            pstmt.setInt(4, 0); 
+            pstmt.setInt(5, 0); 
+            
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error creating post: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean createPost(Post newPost) {
+    // FIXED: Changed table to POSTS and columns to LIKES_COUNT and DISLIKES_COUNT
+    String sql = "INSERT INTO POSTS (TEXT_CONTENT, AUTHOR_ID, LIKES_COUNT, DISLIKES_COUNT) VALUES (?, ?, ?, ?)";
+    
+    // Assuming you have a way to get your connection, like your DatabaseConnection class
+    try (Connection conn = dbConnection.getConnection(); 
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        
+        pstmt.setString(1, newPost.getTextContent());
+        pstmt.setInt(2, newPost.getAuthor().getUserID()); 
+        pstmt.setInt(3, 0); // New posts start with 0 likes
+        pstmt.setInt(4, 0); // New posts start with 0 dislikes
+        
+        int rowsAffected = pstmt.executeUpdate();
+        return rowsAffected == 1;
+        
+    } catch (SQLException e) {
+        System.err.println("Error creating post: " + e.getMessage());
+        e.printStackTrace();
+        return false;
+    }
+}
+
+@Override
+    public boolean likePost(int postId, int userId) {
+        Connection conn = dbConnection.getConnection(); 
+        
+        // 1. Check if they have already interacted with this post
+        String checkSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setInt(1, postId);
+            checkStmt.setInt(2, userId);
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("You have already interacted with this post!");
+                    return false; 
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking interaction: " + e.getMessage());
+            return false;
+        }
+
+        // 2. If no record was found, log the new 'LIKE' and update the count
+        String insertSql = "INSERT INTO POST_INTERACTIONS (POST_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'LIKE')";
+        String updateSql = "UPDATE POSTS SET LIKES_COUNT = LIKES_COUNT + 1 WHERE POST_ID = ?";
+        
+        try (PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+            
+            // Insert the tracking record
+            insertStmt.setInt(1, postId);
+            insertStmt.setInt(2, userId);
+            insertStmt.executeUpdate();
+            
+            // Increment the counter
+            updateStmt.setInt(1, postId);
+            int rowsAffected = updateStmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error liking post: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean dislikePost(int postId, int userId) {
+        Connection conn = dbConnection.getConnection();
+        
+        // 1. Check if they have already interacted
+        String checkSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setInt(1, postId);
+            checkStmt.setInt(2, userId);
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("You have already interacted with this post!");
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking interaction: " + e.getMessage());
+            return false;
+        }
+
+        // 2. Log the 'DISLIKE' and update the count
+        String insertSql = "INSERT INTO POST_INTERACTIONS (POST_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'DISLIKE')";
+        String updateSql = "UPDATE POSTS SET DISLIKES_COUNT = DISLIKES_COUNT + 1 WHERE POST_ID = ?";
+        
+        try (PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+            
+            insertStmt.setInt(1, postId);
+            insertStmt.setInt(2, userId);
+            insertStmt.executeUpdate();
+            
+            updateStmt.setInt(1, postId);
+            int rowsAffected = updateStmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error disliking post: " + e.getMessage());
+            return false;
+        }
+    }
+    @Override
+    public boolean clearInteraction(int postId, int userId) {
+        Connection conn = dbConnection.getConnection();
+        String findSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
+        String deleteSql = "DELETE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
+
+        try (PreparedStatement findStmt = conn.prepareStatement(findSql)) {
+            findStmt.setInt(1, postId);
+            findStmt.setInt(2, userId);
+
+            try (ResultSet rs = findStmt.executeQuery()) {
+                if (rs.next()) {
+                    String type = rs.getString("INTERACTION_TYPE");
+                    
+                    // Choose the correct column to decrement
+                    String column = type.equalsIgnoreCase("LIKE") ? "LIKES_COUNT" : "DISLIKES_COUNT";
+                    String updateSql = "UPDATE POSTS SET " + column + " = " + column + " - 1 WHERE POST_ID = ?";
+
+                    try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
+                         PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                        
+                        // 1. Remove from ledger
+                        deleteStmt.setInt(1, postId);
+                        deleteStmt.setInt(2, userId);
+                        deleteStmt.executeUpdate();
+
+                        // 2. Decrement the counter
+                        updateStmt.setInt(1, postId);
+                        return updateStmt.executeUpdate() > 0;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error clearing interaction: " + e.getMessage());
+        }
+        return false;
+    }
 }

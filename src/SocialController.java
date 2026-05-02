@@ -88,10 +88,6 @@ public class SocialController {
 		service.addMember(user);
 	}
 
-	public void createPost(Community community, User author, String textContent) {
-		service.createPost(community, author, textContent);
-	}
-
 	public Post likePost(Post post) {
 		return service.likePost(post);
 	}
@@ -111,4 +107,19 @@ public class SocialController {
 	public void dislikeComment(Comment comment) {
 		service.dislikeComment(comment);
 	}
+
+	// Fetch the list of communities this user is a member of
+    public List<Community> getJoinedCommunities(User user) {
+        return service.getJoinedCommunities(user);
+    }
+
+    // Fetch the recent posts for a specific community
+    public List<Post> getCommunityPosts(Community community) {
+        return service.getCommunityPosts(community);
+    }
+
+    // Create a new post (This signature matches your UML diagram perfectly!)
+    public void createPost(Community community, User author, String textContent) {
+        service.createPost(community, author, textContent);
+    }
 }

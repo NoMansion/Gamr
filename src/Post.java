@@ -13,6 +13,10 @@ public class Post
     private int dislikeCount;
     private List<Comment> comments;
 
+    public Post(){
+        
+    }
+
     public Post(int postId, User author, Community community, String textContent, int likeCount, int dislikeCount, List<Comment> comments)
     {
         this.postID = postId;
