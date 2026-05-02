@@ -1020,4 +1020,26 @@ public boolean dislikeComment(int commentId, int userId) {
     // Delegates to the helper method to execute the transaction
     return handleInteraction(commentId, userId, checkSql, insertSql, updateSql);
 }
+public boolean removeFriend(int userId1, int userId2) {
+        // Updated to use USER1_ID and USER2_ID
+        String sql = "DELETE FROM Friends WHERE (USER1_ID = ? AND USER2_ID = ?) OR (USER1_ID = ? AND USER2_ID = ?)";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            // Set parameters for the first condition (user1 = USER1_ID, user2 = USER2_ID)
+            pstmt.setInt(1, userId1);
+            pstmt.setInt(2, userId2);
+            
+            // Set parameters for the reverse condition (user2 = USER1_ID, user1 = USER2_ID)
+            pstmt.setInt(3, userId2);
+            pstmt.setInt(4, userId1);
+            
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Database error occurred while removing friend: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
