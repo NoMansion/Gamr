@@ -1,5 +1,6 @@
 package src;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -490,10 +491,66 @@ public class SocialController {
 			String choice = scanner.nextLine().trim();
 			switch (choice) {
 				case "1":
-					System.out.println("\n[Feature: View Online Friends]");
-					break;
+					System.out.println("\n--- ONLINE FRIENDS ---");
+    				List<User> onlineFriends = service.getOnlineFriends(currentUser.getUserID());
+    				if (onlineFriends == null || onlineFriends.isEmpty()) {
+        				System.out.println("None of your friends are currently online.");
+   					} else {
+        				System.out.println(onlineFriends.size() + " friend(s) online:");
+        				for (User friend : onlineFriends) {
+            				System.out.println("  - " + friend.getUsername());
+        				}
+    				}
+    				break;
 				case "2":
-					System.out.println("\n[Feature: Send Notification]");
+					System.out.println("\n--- SEND EMAIL PING TO FRIEND ---");
+    				List<User> onlineFriendsList = service.getOnlineFriends(currentUser.getUserID());
+    				List<User> offlineFriendsList = service.getOfflineFriends(currentUser.getUserID());
+
+    				if ((onlineFriendsList == null || onlineFriendsList.isEmpty()) &&
+        				(offlineFriendsList == null || offlineFriendsList.isEmpty())) {
+        				System.out.println("You have no friends to ping.");
+        				break;
+    				}
+
+    				// Merge both lists and display with indicators
+    				List<User> allFriends = new ArrayList<>();
+    				allFriends.addAll(onlineFriendsList);
+    				allFriends.addAll(offlineFriendsList);
+
+    				char pingLetter = 'A';
+    				for (User friend : allFriends) {
+        				boolean isOnline = onlineFriendsList.contains(friend);
+        				String indicator = isOnline ? "🟢 Online" : "⚫ Offline";
+        				System.out.println(pingLetter + ". " + friend.getUsername() + " " + indicator);
+        				pingLetter++;
+    				}
+
+    				System.out.println("\nEnter the letter or username of the friend you want to ping:");
+    				String friendChoice = scanner.nextLine().trim();
+
+    				// Find the selected friend
+    				User selectedFriend = null;
+    				if (friendChoice.length() == 1 && Character.isLetter(friendChoice.charAt(0))) {
+        				int index = Character.toUpperCase(friendChoice.charAt(0)) - 'A';
+        				if (index >= 0 && index < allFriends.size()) {
+            				selectedFriend = allFriends.get(index);
+        				}
+    				} else {
+        				for (User friend : allFriends) {
+            				if (friend.getUsername().equalsIgnoreCase(friendChoice)) {
+                				selectedFriend = friend;
+                				break;
+            				}
+        				}
+    				}
+
+    				if (selectedFriend == null) {
+        				System.out.println("❌ Friend not found.");
+        				break;
+    				}
+
+    				service.sendEmailPingToFriend(currentUser, selectedFriend);
 					break;
 				case "3":
 					System.out.print("\nEnter username to add: ");
