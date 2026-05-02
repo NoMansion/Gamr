@@ -74,4 +74,14 @@ public class Post
     public void setDislikeCount(int dislikeCount) {
         this.dislikeCount = dislikeCount;
     }
+
+    private int commentCount;
+
+    public int getCommentCount() {
+        return commentCount;
+    }
+
+    public void setCommentCount(int commentCount) {
+        this.commentCount = commentCount;
+    }
 }

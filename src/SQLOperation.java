@@ -315,35 +315,20 @@ public class SQLOperation implements DBOperation {
     }
 
     @Override
-    public boolean insertComment(int postId, int authorId, String text) {
-        String sql = "INSERT INTO Comments (post_id, author_id, text_content, likes_count, dislikes_count) VALUES (?, ?, ?, 0, 0)";
-        Connection conn = dbConnection.getConnection();
+public boolean updateCommentVotes(int commentID, boolean isLike) {
+    // Corrected: changed "likes_count" to "LIKE_COUNT" and "dislikes_count" to "DISLIKE_COUNT"
+    String col = isLike ? "LIKE_COUNT" : "DISLIKE_COUNT";
+    String sql = "UPDATE Comments SET " + col + " = " + col + " + 1 WHERE comment_id = ?";
+    Connection conn = dbConnection.getConnection();
 
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, postId);
-            pstmt.setInt(2, authorId);
-            pstmt.setString(3, text);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setInt(1, commentID);
+        return pstmt.executeUpdate() > 0;
+    } catch (SQLException e) {
+        System.err.println("Error updating comment vote: " + e.getMessage());
+        return false;
     }
-
-    @Override
-    public boolean updateCommentVotes(int commentID, boolean isLike) {
-        String sql = isLike ? "UPDATE Comments SET likes_count = likes_count + 1 WHERE comment_id = ?"
-                : "UPDATE Comments SET dislikes_count = dislikes_count + 1 WHERE comment_id = ?";
-        Connection conn = dbConnection.getConnection();
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, commentID);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
+}
 
     // ==========================================
     // 4. COMMUNITIES & GROUPS
@@ -448,14 +433,14 @@ public class SQLOperation implements DBOperation {
     public List<User> getIncomingFriendRequests(int receiverId) {
         List<User> senders = new ArrayList<>();
         Connection conn = dbConnection.getConnection();
-        
-        // This query joins the Users table with the FriendRequests table 
+
+        // This query joins the Users table with the FriendRequests table
         // to grab the full User profile of the person who sent the request.
         String sql = "SELECT u.* FROM Users u JOIN FriendRequests fr ON u.USER_ID = fr.SENDER_ID WHERE fr.RECEIVER_ID = ?";
-        
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, receiverId);
-            
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     User u = new User();
@@ -474,30 +459,30 @@ public class SQLOperation implements DBOperation {
     @Override
     public boolean acceptFriendRequest(int receiverId, int senderId) {
         Connection conn = dbConnection.getConnection();
-        
-        // We have to do TWO things here: 
+
+        // We have to do TWO things here:
         // 1. Add them to the Friends table.
         // 2. Delete the pending request from the FriendRequests table.
         String insertFriendSql = "INSERT INTO Friends (USER1_ID, USER2_ID) VALUES (?, ?)";
         String deleteRequestSql = "DELETE FROM FriendRequests WHERE SENDER_ID = ? AND RECEIVER_ID = ?";
-        
+
         try {
             // It's good practice to turn off auto-commit when doing multiple linked updates
             conn.setAutoCommit(false);
-            
+
             try (PreparedStatement insertStmt = conn.prepareStatement(insertFriendSql);
-                 PreparedStatement deleteStmt = conn.prepareStatement(deleteRequestSql)) {
-                
+                    PreparedStatement deleteStmt = conn.prepareStatement(deleteRequestSql)) {
+
                 // 1. Insert into friends table
                 insertStmt.setInt(1, receiverId);
                 insertStmt.setInt(2, senderId);
                 insertStmt.executeUpdate();
-                
+
                 // 2. Remove the request
                 deleteStmt.setInt(1, senderId);
                 deleteStmt.setInt(2, receiverId);
                 deleteStmt.executeUpdate();
-                
+
                 conn.commit(); // Make changes permanent
                 return true;
             } catch (SQLException e) {
@@ -517,14 +502,14 @@ public class SQLOperation implements DBOperation {
     public boolean declineFriendRequest(int receiverId, int senderId) {
         Connection conn = dbConnection.getConnection();
         String deleteRequestSql = "DELETE FROM FriendRequests WHERE SENDER_ID = ? AND RECEIVER_ID = ?";
-        
+
         try (PreparedStatement deleteStmt = conn.prepareStatement(deleteRequestSql)) {
             deleteStmt.setInt(1, senderId);
             deleteStmt.setInt(2, receiverId);
-            
+
             int rowsAffected = deleteStmt.executeUpdate();
             return rowsAffected > 0;
-            
+
         } catch (SQLException e) {
             System.err.println("Error declining request: " + e.getMessage());
             return false;
@@ -548,17 +533,17 @@ public class SQLOperation implements DBOperation {
     private Community fetchSingleCommunity(String sql, String searchParam) {
         Connection conn = dbConnection.getConnection();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             if (searchParam != null) {
                 pstmt.setString(1, searchParam);
             }
-            
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     Community c = new Community();
                     c.setCommunityID(rs.getInt("COMMUNITY_ID"));
                     c.setName(rs.getString("NAME"));
-                    
+
                     String genresRaw = rs.getString("GENRES");
                     if (genresRaw != null && !genresRaw.trim().isEmpty()) {
                         c.setGenres(new ArrayList<>(Arrays.asList(genresRaw.split("\\s*,\\s*"))));
@@ -579,16 +564,17 @@ public class SQLOperation implements DBOperation {
     public boolean joinCommunity(int userId, int communityId) {
         String sql = "INSERT INTO CommunityMembers (COMMUNITY_ID, USER_ID) VALUES (?, ?)";
         Connection conn = dbConnection.getConnection();
-        
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, communityId);
             pstmt.setInt(2, userId);
-            
+
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
-            
+
         } catch (SQLException e) {
-            // If the user is already in the community, the Primary Key constraint will throw an error here.
+            // If the user is already in the community, the Primary Key constraint will
+            // throw an error here.
             // We catch it and return false instead of crashing the program.
             return false;
         }
@@ -598,21 +584,22 @@ public class SQLOperation implements DBOperation {
     public List<Community> getJoinedCommunities(int userId) {
         List<Community> communities = new ArrayList<>();
         Connection conn = dbConnection.getConnection();
-        
-        // This query joins Communities with CommunityMembers to find what the user joined
+
+        // This query joins Communities with CommunityMembers to find what the user
+        // joined
         String sql = "SELECT c.* FROM Communities c " +
-                     "JOIN CommunityMembers cm ON c.COMMUNITY_ID = cm.COMMUNITY_ID " +
-                     "WHERE cm.USER_ID = ?";
-        
+                "JOIN CommunityMembers cm ON c.COMMUNITY_ID = cm.COMMUNITY_ID " +
+                "WHERE cm.USER_ID = ?";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
-            
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Community c = new Community();
                     c.setCommunityID(rs.getInt("COMMUNITY_ID"));
                     c.setName(rs.getString("NAME"));
-                    
+
                     String genresRaw = rs.getString("GENRES");
                     if (genresRaw != null && !genresRaw.trim().isEmpty()) {
                         c.setGenres(new ArrayList<>(Arrays.asList(genresRaw.split("\\s*,\\s*"))));
@@ -628,17 +615,21 @@ public class SQLOperation implements DBOperation {
         return communities;
     }
 
-    @Override
+  @Override
     public List<Post> getCommunityPosts(int communityId) {
         List<Post> posts = new ArrayList<>();
         Connection conn = dbConnection.getConnection();
-        
-        // Fetch posts for this community, newest first (ORDER BY POST_ID DESC)
-        String sql = "SELECT * FROM Posts WHERE COMMUNITY_ID = ? ORDER BY POST_ID DESC";
-        
+
+        // Updated query: Added a subquery to count comments
+        String sql = "SELECT p.*, u.username, " +
+                     "(SELECT COUNT(*) FROM Comments c WHERE c.PARENT_POST_ID = p.POST_ID) AS comment_count " +
+                     "FROM Posts p " +
+                     "JOIN Users u ON p.author_id = u.user_id " +
+                     "WHERE p.COMMUNITY_ID = ? ORDER BY p.POST_ID DESC";
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, communityId);
-            
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Post p = new Post();
@@ -646,7 +637,13 @@ public class SQLOperation implements DBOperation {
                     p.setTextContent(rs.getString("TEXT_CONTENT"));
                     p.setLikeCount(rs.getInt("LIKES_COUNT"));
                     p.setDislikeCount(rs.getInt("DISLIKES_COUNT"));
-                    // You could also fetch the Author's username here using a JOIN if you want!
+                    p.setCommentCount(rs.getInt("comment_count")); // Set the comment count
+                    
+                    User author = new User();
+                    author.setUserID(rs.getInt("AUTHOR_ID"));
+                    author.setUsername(rs.getString("username"));
+                    p.setAuthor(author);
+                    
                     posts.add(p);
                 }
             }
@@ -658,17 +655,17 @@ public class SQLOperation implements DBOperation {
 
     public boolean createPost(int communityId, int authorId, String textContent) {
         String sql = "INSERT INTO POSTS (COMMUNITY_ID, AUTHOR_ID, TEXT_CONTENT, LIKES_COUNT, DISLIKES_COUNT) VALUES (?, ?, ?, ?, ?)";
-        
+
         // MOVED OUTSIDE
-        Connection conn = dbConnection.getConnection(); 
-        
+        Connection conn = dbConnection.getConnection();
+
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, communityId);
             pstmt.setInt(2, authorId);
             pstmt.setString(3, textContent);
-            pstmt.setInt(4, 0); 
-            pstmt.setInt(5, 0); 
-            
+            pstmt.setInt(4, 0);
+            pstmt.setInt(5, 0);
+
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
@@ -678,111 +675,51 @@ public class SQLOperation implements DBOperation {
     }
 
     public boolean createPost(Post newPost) {
-    // FIXED: Changed table to POSTS and columns to LIKES_COUNT and DISLIKES_COUNT
-    String sql = "INSERT INTO POSTS (TEXT_CONTENT, AUTHOR_ID, LIKES_COUNT, DISLIKES_COUNT) VALUES (?, ?, ?, ?)";
-    
-    // Assuming you have a way to get your connection, like your DatabaseConnection class
-    try (Connection conn = dbConnection.getConnection(); 
-         PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        
-        pstmt.setString(1, newPost.getTextContent());
-        pstmt.setInt(2, newPost.getAuthor().getUserID()); 
-        pstmt.setInt(3, 0); // New posts start with 0 likes
-        pstmt.setInt(4, 0); // New posts start with 0 dislikes
-        
-        int rowsAffected = pstmt.executeUpdate();
-        return rowsAffected == 1;
-        
-    } catch (SQLException e) {
-        System.err.println("Error creating post: " + e.getMessage());
-        e.printStackTrace();
-        return false;
-    }
-}
+        // FIXED: Changed table to POSTS and columns to LIKES_COUNT and DISLIKES_COUNT
+        String sql = "INSERT INTO POSTS (TEXT_CONTENT, AUTHOR_ID, LIKES_COUNT, DISLIKES_COUNT) VALUES (?, ?, ?, ?)";
 
-@Override
-    public boolean likePost(int postId, int userId) {
-        Connection conn = dbConnection.getConnection(); 
-        
-        // 1. Check if they have already interacted with this post
-        String checkSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
-        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
-            checkStmt.setInt(1, postId);
-            checkStmt.setInt(2, userId);
-            try (ResultSet rs = checkStmt.executeQuery()) {
-                if (rs.next()) {
-                    System.out.println("You have already interacted with this post!");
-                    return false; 
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error checking interaction: " + e.getMessage());
-            return false;
-        }
+        // Assuming you have a way to get your connection, like your DatabaseConnection
+        // class
+        try (Connection conn = dbConnection.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        // 2. If no record was found, log the new 'LIKE' and update the count
-        String insertSql = "INSERT INTO POST_INTERACTIONS (POST_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'LIKE')";
-        String updateSql = "UPDATE POSTS SET LIKES_COUNT = LIKES_COUNT + 1 WHERE POST_ID = ?";
-        
-        try (PreparedStatement insertStmt = conn.prepareStatement(insertSql);
-             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-            
-            // Insert the tracking record
-            insertStmt.setInt(1, postId);
-            insertStmt.setInt(2, userId);
-            insertStmt.executeUpdate();
-            
-            // Increment the counter
-            updateStmt.setInt(1, postId);
-            int rowsAffected = updateStmt.executeUpdate();
-            return rowsAffected > 0;
-            
+            pstmt.setString(1, newPost.getTextContent());
+            pstmt.setInt(2, newPost.getAuthor().getUserID());
+            pstmt.setInt(3, 0); // New posts start with 0 likes
+            pstmt.setInt(4, 0); // New posts start with 0 dislikes
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected == 1;
+
         } catch (SQLException e) {
-            System.err.println("Error liking post: " + e.getMessage());
+            System.err.println("Error creating post: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
 
     @Override
-    public boolean dislikePost(int postId, int userId) {
-        Connection conn = dbConnection.getConnection();
-        
-        // 1. Check if they have already interacted
-        String checkSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
-        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
-            checkStmt.setInt(1, postId);
-            checkStmt.setInt(2, userId);
-            try (ResultSet rs = checkStmt.executeQuery()) {
-                if (rs.next()) {
-                    System.out.println("You have already interacted with this post!");
-                    return false;
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error checking interaction: " + e.getMessage());
-            return false;
-        }
+public boolean likePost(int postId, int userId) {
+    // 1. Check for existing interaction in POST_INTERACTIONS
+    String checkSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
+    // 2. Insert into ledger and increment LIKES_COUNT
+    String insertSql = "INSERT INTO POST_INTERACTIONS (POST_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'LIKE')";
+    String updateSql = "UPDATE POSTS SET LIKES_COUNT = LIKES_COUNT + 1 WHERE POST_ID = ?";
+    
+    return handleInteraction(postId, userId, checkSql, insertSql, updateSql);
+}
 
-        // 2. Log the 'DISLIKE' and update the count
-        String insertSql = "INSERT INTO POST_INTERACTIONS (POST_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'DISLIKE')";
-        String updateSql = "UPDATE POSTS SET DISLIKES_COUNT = DISLIKES_COUNT + 1 WHERE POST_ID = ?";
-        
-        try (PreparedStatement insertStmt = conn.prepareStatement(insertSql);
-             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-            
-            insertStmt.setInt(1, postId);
-            insertStmt.setInt(2, userId);
-            insertStmt.executeUpdate();
-            
-            updateStmt.setInt(1, postId);
-            int rowsAffected = updateStmt.executeUpdate();
-            return rowsAffected > 0;
-            
-        } catch (SQLException e) {
-            System.err.println("Error disliking post: " + e.getMessage());
-            return false;
-        }
-    }
+@Override
+public boolean dislikePost(int postId, int userId) {
+    // 1. Check for existing interaction in POST_INTERACTIONS
+    String checkSql = "SELECT INTERACTION_TYPE FROM POST_INTERACTIONS WHERE POST_ID = ? AND USER_ID = ?";
+    // 2. Insert into ledger and increment DISLIKES_COUNT
+    String insertSql = "INSERT INTO POST_INTERACTIONS (POST_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'DISLIKE')";
+    String updateSql = "UPDATE POSTS SET DISLIKES_COUNT = DISLIKES_COUNT + 1 WHERE POST_ID = ?";
+    
+    return handleInteraction(postId, userId, checkSql, insertSql, updateSql);
+}
+
     @Override
     public boolean clearInteraction(int postId, int userId) {
         Connection conn = dbConnection.getConnection();
@@ -796,14 +733,14 @@ public class SQLOperation implements DBOperation {
             try (ResultSet rs = findStmt.executeQuery()) {
                 if (rs.next()) {
                     String type = rs.getString("INTERACTION_TYPE");
-                    
+
                     // Choose the correct column to decrement
                     String column = type.equalsIgnoreCase("LIKE") ? "LIKES_COUNT" : "DISLIKES_COUNT";
                     String updateSql = "UPDATE POSTS SET " + column + " = " + column + " - 1 WHERE POST_ID = ?";
 
                     try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
-                         PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
-                        
+                            PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+
                         // 1. Remove from ledger
                         deleteStmt.setInt(1, postId);
                         deleteStmt.setInt(2, userId);
@@ -820,10 +757,15 @@ public class SQLOperation implements DBOperation {
         }
         return false;
     }
+
     @Override
     public List<Comment> getCommentsByPostId(int postId) {
         List<Comment> comments = new ArrayList<>();
-        String sql = "SELECT * FROM Comments WHERE PARENT_POST_ID = ?";
+        // Updated query: JOIN with Users to get the author's username
+        String sql = "SELECT c.*, u.username FROM Comments c " +
+                     "JOIN Users u ON c.author_id = u.user_id " +
+                     "WHERE c.PARENT_POST_ID = ?";
+                     
         try (PreparedStatement pstmt = dbConnection.getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, postId);
             ResultSet rs = pstmt.executeQuery();
@@ -833,9 +775,163 @@ public class SQLOperation implements DBOperation {
                 c.setTextContent(rs.getString("TEXT_CONTENT"));
                 c.setLikesCount(rs.getInt("LIKE_COUNT"));
                 c.setDislikeCount(rs.getInt("DISLIKE_COUNT"));
+                
+                // Create and attach the author
+                User author = new User();
+                author.setUserID(rs.getInt("AUTHOR_ID"));
+                author.setUsername(rs.getString("username"));
+                c.setAuthor(author);
+                
                 comments.add(c);
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return comments;
     }
+
+    // Add to SQLOperation.java
+   @Override
+    public Post getPostById(int postId) {
+        // Updated query: Added a subquery to count comments
+        String sql = "SELECT p.*, u.username, " +
+                     "(SELECT COUNT(*) FROM Comments c WHERE c.PARENT_POST_ID = p.post_id) AS comment_count " +
+                     "FROM Posts p " +
+                     "JOIN Users u ON p.author_id = u.user_id " +
+                     "WHERE p.post_id = ?";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, postId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    Post post = new Post();
+                    post.setPostID(rs.getInt("post_id"));
+                    post.setTextContent(rs.getString("text_content"));
+                    post.setLikeCount(rs.getInt("likes_count"));
+                    post.setDislikeCount(rs.getInt("dislikes_count"));
+                    post.setCommentCount(rs.getInt("comment_count")); // Set the comment count
+                    
+                    User author = new User();
+                    author.setUserID(rs.getInt("author_id"));
+                    author.setUsername(rs.getString("username"));
+                    post.setAuthor(author);
+                    
+                    return post;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Updated method in SQLOperation.java
+    @Override
+    public boolean insertComment(int postId, int authorId, String text) {
+        // Changed DISLIKES_COUNT to DISLIKE_COUNT and LIKES_COUNT to LIKE_COUNT
+        String sql = "INSERT INTO Comments (PARENT_POST_ID, AUTHOR_ID, TEXT_CONTENT, LIKE_COUNT, DISLIKE_COUNT) VALUES (?, ?, ?, 0, 0)";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, postId);
+            pstmt.setInt(2, authorId);
+            pstmt.setString(3, text);
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error inserting comment: " + e.getMessage());
+            return false;
+        }
+    }
+    @Override
+public boolean likeComment(int commentId, int userId) {
+    Connection conn = dbConnection.getConnection();
+    // 1. Check for existing interaction
+    String checkSql = "SELECT INTERACTION_TYPE FROM COMMENT_INTERACTIONS WHERE COMMENT_ID = ? AND USER_ID = ?";
+    // 2. Insert into ledger and update counter
+    String insertSql = "INSERT INTO COMMENT_INTERACTIONS (COMMENT_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'LIKE')";
+    String updateSql = "UPDATE COMMENTS SET LIKE_COUNT = LIKE_COUNT + 1 WHERE COMMENT_ID = ?";
+    
+    return handleInteraction(commentId, userId, checkSql, insertSql, updateSql);
+}
+
+@Override
+public boolean clearCommentInteraction(int commentId, int userId) {
+    Connection conn = dbConnection.getConnection();
+    String findSql = "SELECT INTERACTION_TYPE FROM COMMENT_INTERACTIONS WHERE COMMENT_ID = ? AND USER_ID = ?";
+    String deleteSql = "DELETE FROM COMMENT_INTERACTIONS WHERE COMMENT_ID = ? AND USER_ID = ?";
+
+    try (PreparedStatement findStmt = conn.prepareStatement(findSql)) {
+        findStmt.setInt(1, commentId);
+        findStmt.setInt(2, userId);
+
+        try (ResultSet rs = findStmt.executeQuery()) {
+            if (rs.next()) {
+                String type = rs.getString("INTERACTION_TYPE");
+                // Match your singular column names: LIKE_COUNT or DISLIKE_COUNT
+                String column = type.equalsIgnoreCase("LIKE") ? "LIKE_COUNT" : "DISLIKE_COUNT";
+                String updateSql = "UPDATE COMMENTS SET " + column + " = " + column + " - 1 WHERE COMMENT_ID = ?";
+
+                try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
+                     PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                    
+                    deleteStmt.setInt(1, commentId);
+                    deleteStmt.setInt(2, userId);
+                    deleteStmt.executeUpdate();
+
+                    updateStmt.setInt(1, commentId);
+                    return updateStmt.executeUpdate() > 0;
+                }
+            }
+        }
+    } catch (SQLException e) {
+        System.err.println("Error clearing comment interaction: " + e.getMessage());
+    }
+    return false;
+}
+
+private boolean handleInteraction(int targetId, int userId, String checkSql, String insertSql, String updateSql) {
+    Connection conn = dbConnection.getConnection();
+    
+    try {
+        // 1. Check if the user already interacted
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setInt(1, targetId);
+            checkStmt.setInt(2, userId);
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    System.out.println("You have already interacted with this item!");
+                    return false;
+                }
+            }
+        }
+
+        // 2. Log the interaction and update the count
+        try (PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+             PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+            
+            insertStmt.setInt(1, targetId);
+            insertStmt.setInt(2, userId);
+            insertStmt.executeUpdate();
+            
+            updateStmt.setInt(1, targetId);
+            return updateStmt.executeUpdate() > 0;
+        }
+    } catch (SQLException e) {
+        System.err.println("Database error during interaction: " + e.getMessage());
+        return false;
+    }
+}
+@Override
+public boolean dislikeComment(int commentId, int userId) {
+    // Defines the SQL logic for checking, logging, and updating a dislike
+    String checkSql = "SELECT INTERACTION_TYPE FROM COMMENT_INTERACTIONS WHERE COMMENT_ID = ? AND USER_ID = ?";
+    String insertSql = "INSERT INTO COMMENT_INTERACTIONS (COMMENT_ID, USER_ID, INTERACTION_TYPE) VALUES (?, ?, 'DISLIKE')";
+    String updateSql = "UPDATE COMMENTS SET DISLIKE_COUNT = DISLIKE_COUNT + 1 WHERE COMMENT_ID = ?";
+    
+    // Delegates to the helper method to execute the transaction
+    return handleInteraction(commentId, userId, checkSql, insertSql, updateSql);
+}
 }
