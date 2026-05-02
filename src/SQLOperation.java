@@ -302,12 +302,28 @@ public class SQLOperation implements DBOperation {
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        comment.setCommentId(generatedKeys.getInt(1));
+                        comment.setCommentID(generatedKeys.getInt(1));
                     }
                 }
                 return true;
             }
             return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean insertComment(int postId, int authorId, String text) {
+        String sql = "INSERT INTO Comments (post_id, author_id, text_content, likes_count, dislikes_count) VALUES (?, ?, ?, 0, 0)";
+        Connection conn = dbConnection.getConnection();
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, postId);
+            pstmt.setInt(2, authorId);
+            pstmt.setString(3, text);
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -803,5 +819,23 @@ public class SQLOperation implements DBOperation {
             System.err.println("Error clearing interaction: " + e.getMessage());
         }
         return false;
+    }
+    @Override
+    public List<Comment> getCommentsByPostId(int postId) {
+        List<Comment> comments = new ArrayList<>();
+        String sql = "SELECT * FROM Comments WHERE PARENT_POST_ID = ?";
+        try (PreparedStatement pstmt = dbConnection.getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, postId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Comment c = new Comment();
+                c.setCommentID(rs.getInt("COMMENT_ID"));
+                c.setTextContent(rs.getString("TEXT_CONTENT"));
+                c.setLikesCount(rs.getInt("LIKE_COUNT"));
+                c.setDislikeCount(rs.getInt("DISLIKE_COUNT"));
+                comments.add(c);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return comments;
     }
 }

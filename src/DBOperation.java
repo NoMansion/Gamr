@@ -33,4 +33,6 @@ public interface DBOperation {
     boolean likePost(int postId, int userId);
     boolean dislikePost(int postId, int userId);
     boolean clearInteraction(int postId, int userId);
+    List<Comment> getCommentsByPostId(int postId);
+    boolean insertComment(int postId, int authorId, String text);
 }

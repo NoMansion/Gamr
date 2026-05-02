@@ -11,6 +11,9 @@ public class Comment {
     private int likesCount;
     private int dislikeCount;
 
+    public Comment() {
+    }
+    
     public Comment(int commentId, User author, Post parentPost, String textContent) {
         this.commentId = commentId;
         this.author = author;
@@ -60,11 +63,12 @@ public class Comment {
         this.dislikeCount = dislikeCount;
     }
 
-    public int getCommentId() {
+    public int getCommentID() {
         return commentId;
     }
 
-    public void setCommentId(int commentId) {
+    public void setCommentID(int commentId) {
         this.commentId = commentId;
     }
+    
 }
