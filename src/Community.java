@@ -69,4 +69,8 @@ public class Community
     public String getName() {
         return name;
     }
+
+    public int getCommunityID() {
+        return communityID;
+    }
 }
