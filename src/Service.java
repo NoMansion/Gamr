@@ -2,7 +2,17 @@ package src;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
 import java.util.stream.Collectors;
+
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
+import java.util.Properties;
+import java.util.Scanner;
 
 public class Service {
 
@@ -39,6 +49,7 @@ public class Service {
 
     public void logout() {
         if (this.currentUser != null) {
+            dbOp.setUserOffline(currentUser.getUserID());
             System.out.println("User " + currentUser.getUsername() + " logged out.");
             this.currentUser = null;
         }
@@ -211,8 +222,49 @@ public boolean insertComment(int postId, int authorId, String text) {
     }
 
     public void sendEmailPingToFriend(User sender, User friend) {
-        System.out.println("Ping! " + sender.getUsername() + " sent an email notification to " + friend.getUsername());
-    }
+        final String senderEmail = "gamrnoreply@gmail.com"; // Ping email 
+        final String appPassword = "ggeihbbjnxhymnil"; // App Password
+
+        String customMessage = "";
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Type your message below (or press Enter to send the default message):");
+        customMessage = scanner.nextLine().trim();
+
+        boolean isDefault = customMessage.isEmpty();
+        String subject = isDefault
+            ? sender.getUsername() + " sent a ping!"
+            : sender.getUsername() + " sent a custom ping!";
+        String body = isDefault
+            ? "Hey! I'm online and ready to play a game together. Hope to see you soon!"
+            : customMessage;
+
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+
+        Session session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(senderEmail, appPassword);
+            }
+        });
+
+        try {
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(senderEmail));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(friend.getEmail()));
+            message.setSubject(subject);
+            message.setText(body);
+            Transport.send(message);
+            System.out.println("✅ Email ping sent to " + friend.getUsername() + "!");
+        } catch (MessagingException e) {
+            System.out.println("❌ Failed to send email.");
+            e.printStackTrace();
+        }
+            System.out.println("Ping! " + sender.getUsername() + " sent an email notification to " + friend.getUsername());
+        }
 
     public void sendEmailPingToGroup(User sender, Group group) {
         System.out.println("Ping! " + sender.getUsername() + " notified everyone in group ID: " + group.getGroupId());
@@ -257,5 +309,13 @@ public boolean dislikeComment(int commentId, int userId) {
 
 public boolean clearCommentInteraction(int commentId, int userId) {
     return dbOp.clearCommentInteraction(commentId, userId);
+}
+
+public List<User> getOnlineFriends(int userID) {
+    return dbOp.getOnlineFriends(userID);
+}
+
+public List<User> getOfflineFriends(int userID) {
+    return dbOp.getOfflineFriends(userID);
 }
 }
