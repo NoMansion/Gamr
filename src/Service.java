@@ -143,9 +143,15 @@ public class Service {
         return dbOp.updatePostVotes(postId, isLike);
     }
 
-    public boolean insertComment(int postId, int authorId, String text) {
-        return dbOp.insertComment(postId, authorId, text);
+    // Add to Service.java
+public boolean insertComment(int postId, int authorId, String text) {
+    // Business logic: ensure the comment actually contains text
+    if (text == null || text.trim().isEmpty()) {
+        System.out.println("Error: Comment cannot be empty.");
+        return false;
     }
+    return dbOp.insertComment(postId, authorId, text);
+}
 
     public boolean updateCommentVotes(int commentId, boolean isLike) {
         return dbOp.updateCommentVotes(commentId, isLike);
@@ -223,4 +229,33 @@ public class Service {
                 .collect(Collectors.toList());
         System.out.println("Filtered down to " + filtered.size() + " communities for genre: " + genre);
     }
+
+    public boolean likePost(int postId, int userId) {
+    return dbOp.likePost(postId, userId); //
+}
+
+public boolean dislikePost(int postId, int userId) {
+    return dbOp.dislikePost(postId, userId); //
+}
+
+public boolean clearInteraction(int postId, int userId) {
+    return dbOp.clearInteraction(postId, userId); //
+}
+
+    // Helper to get fresh counts after a removal
+    public Post getPostById(int postId) {
+        // Implement a simple SELECT * FROM POSTS WHERE POST_ID = ? in SQLOperation
+        return dbOp.getPostById(postId); 
+    }
+    public boolean likeComment(int commentId, int userId) {
+    return dbOp.likeComment(commentId, userId);
+}
+
+public boolean dislikeComment(int commentId, int userId) {
+    return dbOp.dislikeComment(commentId, userId);
+}
+
+public boolean clearCommentInteraction(int commentId, int userId) {
+    return dbOp.clearCommentInteraction(commentId, userId);
+}
 }
