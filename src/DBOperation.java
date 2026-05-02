@@ -37,6 +37,10 @@ public interface DBOperation {
     boolean insertComment(int postId, int authorId, String text);
     Post getPostById(int postID);
     boolean likeComment(int commentId, int userId);
-boolean dislikeComment(int commentId, int userId);
-boolean clearCommentInteraction(int commentId, int userId);
+    boolean dislikeComment(int commentId, int userId);
+    boolean clearCommentInteraction(int commentId, int userId);
+    List<User> getOnlineFriends(int userID);
+    List<User> getOfflineFriends(int userID);
+    boolean setUserOffline(int userID);
+
 }
