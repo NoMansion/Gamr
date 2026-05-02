@@ -222,8 +222,17 @@ public boolean insertComment(int postId, int authorId, String text) {
     }
 
     public void sendEmailPingToFriend(User sender, User friend) {
-        final String senderEmail = "gamrnoreply@gmail.com"; // Ping email 
-        final String appPassword = ""; // App Password
+        Properties config = new Properties();
+        try (FileInputStream in = new FileInputStream("config.properties")) {
+            config.load(in);
+        } catch (IOException e) {
+            System.out.println("❌ Could not load email configuration.");
+            e.printStackTrace();
+            return;
+        }
+
+        final String senderEmail = config.getProperty("email.address");
+        final String appPassword = config.getProperty("email.password");
 
         String customMessage = "";
         Scanner scanner = new Scanner(System.in);
