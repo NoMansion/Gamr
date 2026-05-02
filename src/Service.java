@@ -223,7 +223,7 @@ public boolean insertComment(int postId, int authorId, String text) {
 
     public void sendEmailPingToFriend(User sender, User friend) {
         final String senderEmail = "gamrnoreply@gmail.com"; // Ping email 
-        final String appPassword = "ggeihbbjnxhymnil"; // App Password
+        final String appPassword = ""; // App Password
 
         String customMessage = "";
         Scanner scanner = new Scanner(System.in);
