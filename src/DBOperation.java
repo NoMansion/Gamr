@@ -12,7 +12,7 @@ public interface DBOperation {
     boolean deleteFriendRequest(int senderID, int receiverID);
     boolean insertFriendship(int userID1, int userID2);
     boolean deleteFriendship(int userID1, int userID2);
-    boolean insertBlockedUser(String blockerUsername, String blockedUsername);
+    boolean insertBlockedUser(int blockerId, int blockedId);
     boolean insertPost(Post post);
     List<Post> getPostsByUserID(int authorID);
     boolean updatePostVotes(int postID, boolean isLike);
@@ -44,5 +44,10 @@ public interface DBOperation {
     boolean setUserOffline(int userID);
     boolean removeFriend(int currentUserId, int targetUserId);
     List<User> getFriendRecommendations(int userID);
-    
+    List<User> getMutualFriends(int userId1, int userId2);
+    Group createGroup(String groupName, int creatorId);
+    List<Group> getJoinedGroupsList(int userId);
+    List<User> getGroupMembers(int groupId);
+    boolean removeGroupMember(int groupId, int userId);
+    List<User> getAllFriends(int userID);
 }

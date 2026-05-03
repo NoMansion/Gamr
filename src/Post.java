@@ -84,4 +84,12 @@ public class Post
     public void setCommentCount(int commentCount) {
         this.commentCount = commentCount;
     }
+
+    public Community getCommunity() {
+        return community;
+    }
+
+    public void setCommunity(Community community) {
+        this.community = community;
+    }
 }

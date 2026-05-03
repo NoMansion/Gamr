@@ -1,46 +1,24 @@
 package src;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Group {
-    // Attributes
     private int groupId;
-    private List<User> groupMembers;
+    private String groupName;
+    private int creatorId;
 
-    // Constructor
-    public Group() {
-        this.groupId = 0;
-        this.groupMembers = new ArrayList<>();
-    }
+    public Group() {}
 
-    public Group(List<User> groupMembers) {
-        this.groupMembers = groupMembers;
-    }
-
-    // Methods
-    public void addFriendsToGroup(List<User> users) {
-        // add given users to the group
-    }
-
-    public void removeMember(User user) {
-        // remove user from the group
-    }
-
-    // getters/setters
-    public List<User> getGroupMembers() {
-        return groupMembers;
-    }
-
-    public void setGroupMembers(List<User> groupMembers) {
-        this.groupMembers = groupMembers;
-    }
-
-    public int getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(int groupId) {
+    public Group(int groupId, String groupName, int creatorId) {
         this.groupId = groupId;
+        this.groupName = groupName;
+        this.creatorId = creatorId;
     }
+
+    public int getGroupId() { return groupId; }
+    public void setGroupId(int groupId) { this.groupId = groupId; }
+    
+    public String getGroupName() { return groupName; }
+    public void setGroupName(String groupName) { this.groupName = groupName; }
+    
+    public int getCreatorId() { return creatorId; }
+    public void setCreatorId(int creatorId) { this.creatorId = creatorId; }
 }
