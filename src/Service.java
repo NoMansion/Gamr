@@ -138,9 +138,9 @@ public class Service {
         }
         boolean success = dbOp.createPost(community.getCommunityID(), author.getUserID(), textContent);
         if (success) {
-            System.out.println("✅ Post published successfully to " + community.getName() + "!");
+            System.out.println("Post published successfully to " + community.getName() + "!");
         } else {
-            System.out.println("❌ Failed to publish post.");
+            System.out.println("Failed to publish post.");
         }
     }
 
@@ -226,7 +226,7 @@ public class Service {
         try (FileInputStream in = new FileInputStream("config.properties")) {
             config.load(in);
         } catch (IOException e) {
-            System.out.println("❌ Could not load email configuration.");
+            System.out.println("Could not load email configuration.");
             e.printStackTrace();
             return;
         }
@@ -262,9 +262,9 @@ public class Service {
             message.setSubject(subject);
             message.setText(body);
             Transport.send(message);
-            System.out.println("✅ Email ping sent to " + friend.getUsername() + "!");
+            System.out.println("Email ping sent to " + friend.getUsername() + "!");
         } catch (MessagingException e) {
-            System.out.println("❌ Failed to send email.");
+            System.out.println("Failed to send email.");
             e.printStackTrace();
         }
     }
@@ -349,7 +349,7 @@ public class Service {
         try (FileInputStream in = new FileInputStream("config.properties")) {
             config.load(in);
         } catch (IOException e) {
-            System.out.println("❌ Could not load email configuration.");
+            System.out.println("Could not load email configuration.");
             return;
         }
         final String senderEmail = config.getProperty("email.address");
@@ -387,10 +387,10 @@ public class Service {
                 Transport.send(message);
                 sentCount++;
             } catch (MessagingException e) {
-                System.out.println("❌ Failed to send to " + member.getUsername());
+                System.out.println("Failed to send to " + member.getUsername());
             }
         }
-        System.out.println("✅ Group ping sent successfully to " + sentCount + " members!");
+        System.out.println("Group ping sent successfully to " + sentCount + " members!");
     }
 
     public List<User> getAllFriends(int userID) {
