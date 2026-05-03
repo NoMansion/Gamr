@@ -6,7 +6,13 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
+
+
 public class SocialController {
+
+	private String gamerGameFilter = "";
+	private String gamerGenreFilter = "";
+	private String gamerAgeFilter = "";
 
 	private final Service service;
 	private final Scanner scanner;
@@ -47,54 +53,60 @@ public class SocialController {
 	}
 
 	private void handleCreateAccount() {
-		System.out.println("\n--- CREATE ACCOUNT ---");
-		User newUser = new User();
+    System.out.println("\n--- CREATE ACCOUNT ---");
+    User newUser = new User();
 
-		System.out.print("Enter username: ");
-		newUser.setUsername(scanner.nextLine().trim());
+    System.out.print("Enter username: ");
+    newUser.setUsername(scanner.nextLine().trim());
 
-		System.out.print("Enter email: ");
-		newUser.setEmail(scanner.nextLine().trim());
+    System.out.print("Enter email: ");
+    newUser.setEmail(scanner.nextLine().trim());
 
-		System.out.print("Enter password: ");
-		newUser.setPasswordHash(scanner.nextLine().trim());
+    System.out.print("Enter password: ");
+    newUser.setPasswordHash(scanner.nextLine().trim());
 
-		System.out.print("Enter age: ");
-		try {
-			newUser.setAge(Integer.parseInt(scanner.nextLine().trim()));
-		} catch (NumberFormatException e) {
-			System.out.println("Invalid age entered. Defaulting to 0.");
-			newUser.setAge(0);
-		}
+    System.out.print("Enter age: ");
+    try {
+        newUser.setAge(Integer.parseInt(scanner.nextLine().trim()));
+    } catch (NumberFormatException e) {
+        System.out.println("Invalid age entered. Defaulting to 0.");
+        newUser.setAge(0);
+    }
 
-		System.out.print("Enter a short bio: ");
-		newUser.setBio(scanner.nextLine().trim());
+    System.out.print("Enter a short bio: ");
+    newUser.setBio(scanner.nextLine().trim());
 
-		System.out.print("Enter favorite games (comma-separated): ");
-		String gamesInput = scanner.nextLine();
-		List<String> gamesList = Arrays.stream(gamesInput.split(","))
-				.map(String::trim)
-				.filter(s -> !s.isEmpty())
-				.collect(Collectors.toList());
-		newUser.setFavoriteGames(gamesList);
+    System.out.print("Enter favorite games (comma-separated): ");
+    String gamesInput = scanner.nextLine().trim();
 
-		System.out.print("Enter favorite genres (comma-separated): ");
-		String genresInput = scanner.nextLine();
-		List<String> genresList = Arrays.stream(genresInput.split(","))
-				.map(String::trim)
-				.filter(s -> !s.isEmpty())
-				.collect(Collectors.toList());
-		newUser.setFavoriteGenres(genresList);
+    List<String> gamesList = Arrays.stream(gamesInput.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
 
-		boolean success = service.createAccount(newUser);
+    newUser.setFavoriteGames(gamesList);
 
-		if (success) {
-			System.out.println("\nAccount created successfully! Welcome, " + newUser.getUsername() + ".");
-			System.out.println("Please log in with your new credentials.");
-		} else {
-			System.out.println("\nFailed to create account. That username or email might already be taken.");
-		}
-	}
+    System.out.print("Enter favorite genres (comma-separated): ");
+    String genresInput = scanner.nextLine().trim();
+
+    List<String> genresList = Arrays.stream(genresInput.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
+
+    newUser.setFavoriteGenres(genresList);
+
+    boolean success = service.createAccount(newUser);
+
+    if (success) {
+        System.out.println("\nAccount created successfully! Welcome, " + newUser.getUsername() + ".");
+        System.out.println("Favorite Games: " + newUser.getFavoriteGames());
+        System.out.println("Favorite Genres: " + newUser.getFavoriteGenres());
+        System.out.println("Please log in with your new credentials.");
+    } else {
+        System.out.println("\nFailed to create account. That username or email might already be taken.");
+    }
+}
 
 	private void handleLogin() {
 		System.out.println("\n--- LOG IN ---");
@@ -141,11 +153,8 @@ public class SocialController {
 					showFindGamersTab();
 					break;
 				case "4":
-					boolean accountDeleted = showProfileSettingsTab();
-					if (accountDeleted) {
-						loggedIn = false;
-					}
-					break;
+					  showProfileSettingsTab();
+   					 break;
 				case "5":
 					loggedIn = false;
 					System.out.println("Logging out... Returning to main menu.");
@@ -643,112 +652,227 @@ public class SocialController {
 	}
 
 	private void showFindGamersTab() {
-		boolean inTab = true;
-		while (inTab) {
-			System.out.println("\n--- FIND GAMERS TAB ---");
-			System.out.println("1. Start Queue");
-			System.out.println("2. Apply Filters (Games, Genres, Age)");
-			System.out.println("3. Back to Dashboard");
-			System.out.print("Choose an option: ");
-			String choice = scanner.nextLine().trim();
-			switch (choice) {
-				case "1":
-					System.out.println("\n[Feature: Starting Matchmaking Queue...] Looking for gamers!");
-					break;
-				case "2":
-					System.out.println("\n--- APPLY FILTERS ---");
-					System.out.print("Filter by Game (leave blank to skip): ");
-					String gameFilter = scanner.nextLine().trim();
-					System.out.print("Filter by Genre (leave blank to skip): ");
-					String genreFilter = scanner.nextLine().trim();
-					System.out.print("Filter by Max Age (leave blank to skip): ");
-					String ageFilter = scanner.nextLine().trim();
-					System.out.println("Filters applied! Game: [" + gameFilter + "], Genre: [" + genreFilter
-							+ "], Max Age: [" + ageFilter + "]");
-					break;
-				case "3":
-					inTab = false;
-					break;
-				default:
-					System.out.println("Invalid option.");
-			}
-		}
-	}
+    boolean inTab = true;
 
-	private boolean showProfileSettingsTab() {
-		boolean inTab = true;
-		while (inTab) {
-			System.out.println("\n--- PROFILE SETTINGS ---");
-			System.out.println("1. View My Posts");
-			System.out.println("2. Edit Profile Information");
-			System.out.println("3. Delete Account");
-			System.out.println("4. Back to Dashboard");
-			System.out.print("Choose an option: ");
+    while (inTab) {
+        System.out.println("\n--- FIND GAMERS TAB ---");
+        System.out.println("1. Start Queue");
+        System.out.println("2. Apply Filters (Games, Genres, Age)");
+        System.out.println("3. Clear Filters");
+        System.out.println("4. Back to Dashboard");
+        System.out.println("Current Filters -> Game: [" + gamerGameFilter + "], Genre: ["
+                + gamerGenreFilter + "], Max Age: [" + gamerAgeFilter + "]");
+        System.out.print("Choose an option: ");
 
-			String choice = scanner.nextLine().trim();
-			switch (choice) {
-				case "1":
-					List<Post> myPosts = service.retrieveUserPosts(currentUser);
-					if (myPosts == null || myPosts.isEmpty()) {
-						System.out.println("You haven't made any posts yet.");
-					} else {
-						System.out.println("\n--- My Posts ---");
-						for (Post post : myPosts) {
-							System.out.println("Post ID: " + post.getPostID());
-							System.out.println("Content: " + post.getTextContent());
-							System.out.println(
-									"Likes: " + post.getLikeCount() + " | Dislikes: " + post.getDislikeCount());
-							System.out.println("-------------------");
-						}
-					}
-					break;
-				case "2":
-					System.out.println("\n--- EDIT PROFILE ---");
-					System.out.println("Leave a field blank and press Enter to keep current value.");
-					System.out.print("Update Bio (Current: " + currentUser.getBio() + "): ");
-					String newBio = scanner.nextLine().trim();
-					if (!newBio.isEmpty()) {
-						currentUser.setBio(newBio);
-					}
-					System.out.print("Update Age (Current: " + currentUser.getAge() + "): ");
-					String newAgeStr = scanner.nextLine().trim();
-					if (!newAgeStr.isEmpty()) {
-						try {
-							currentUser.setAge(Integer.parseInt(newAgeStr));
-						} catch (NumberFormatException e) {
-							System.out.println("Invalid age format. Keeping old age.");
-						}
-					}
-					if (service.updateUserProfile(currentUser)) {
-						System.out.println("Profile updated successfully!");
-					} else {
-						System.out.println("Failed to update profile.");
-					}
-					break;
-				case "3":
-					System.out.println("\n--- DELETE ACCOUNT ---");
-					System.out.print(
-							"Are you SURE you want to delete your account? This cannot be undone! (type 'yes' to confirm): ");
-					String confirm = scanner.nextLine().trim().toLowerCase();
-					if (confirm.equals("yes")) {
-						if (service.deleteUser(currentUser.getUserID())) {
-							System.out.println("Account deleted successfully. We're sad to see you go!");
-							currentUser = null;
-							return true;
-						} else {
-							System.out.println("Error: Could not delete account.");
-						}
-					} else {
-						System.out.println("Account deletion cancelled.");
-					}
-					break;
-				case "4":
-					inTab = false;
-					break;
-				default:
-					System.out.println("Invalid option.");
-			}
-		}
-		return false;
-	}
+        String choice = scanner.nextLine().trim();
+
+        switch (choice) {
+            case "1":
+                startFindGamersQueue();
+                break;
+            case "2":
+                applyFindGamersFilters();
+                break;
+            case "3":
+                gamerGameFilter = "";
+                gamerGenreFilter = "";
+                gamerAgeFilter = "";
+                System.out.println("Filters cleared.");
+                break;
+            case "4":
+                inTab = false;
+                break;
+            default:
+                System.out.println("Invalid option.");
+        }
+    }
 }
+
+	private void showProfileSettingsTab() {
+    boolean inSettings = true;
+
+    while (inSettings) {
+        System.out.println("\n--- PROFILE SETTINGS ---");
+        System.out.println("1. View Profile");
+        System.out.println("2. Edit Profile Information");
+        System.out.println("3. Back to Dashboard");
+        System.out.print("Choose an option: ");
+
+        String choice = scanner.nextLine().trim();
+
+        switch (choice) {
+            case "1":
+                System.out.println("\n--- YOUR PROFILE ---");
+                System.out.println("Username: " + currentUser.getUsername());
+                System.out.println("Email: " + currentUser.getEmail());
+                System.out.println("Age: " + currentUser.getAge());
+                System.out.println("Bio: " + currentUser.getBio());
+                System.out.println("Favorite Games: " + currentUser.getFavoriteGames());
+                System.out.println("Favorite Genres: " + currentUser.getFavoriteGenres());
+                break;
+
+            case "2":
+                System.out.println("\n--- EDIT PROFILE ---");
+
+                System.out.print("New email (leave blank to keep current): ");
+                String newEmail = scanner.nextLine().trim();
+                if (!newEmail.isEmpty()) {
+                    currentUser.setEmail(newEmail);
+                }
+
+                System.out.print("New age (leave blank to keep current): ");
+                String newAge = scanner.nextLine().trim();
+                if (!newAge.isEmpty()) {
+                    try {
+                        currentUser.setAge(Integer.parseInt(newAge));
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid age input. Keeping old age.");
+                    }
+                }
+
+                System.out.print("New bio (leave blank to keep current): ");
+                String newBio = scanner.nextLine().trim();
+                if (!newBio.isEmpty()) {
+                    currentUser.setBio(newBio);
+                }
+
+                System.out.print("Add a favorite game (leave blank to skip): ");
+                String newGame = scanner.nextLine().trim();
+                if (!newGame.isEmpty()) {
+                    currentUser.getFavoriteGames().add(newGame);
+                }
+
+                System.out.print("Add a favorite genre (leave blank to skip): ");
+                String newGenre = scanner.nextLine().trim();
+                if (!newGenre.isEmpty()) {
+                    currentUser.getFavoriteGenres().add(newGenre);
+                }
+
+                boolean updated = service.updateUserProfile(currentUser);
+
+                if (updated) {
+                    System.out.println("Profile updated successfully!");
+                } else {
+                    System.out.println("Failed to update profile.");
+                }
+
+                break;
+
+            case "3":
+                inSettings = false;
+                break;
+
+            default:
+                System.out.println("Invalid option.");
+        }
+    }
+}
+	
+
+	private void applyFindGamersFilters() {
+    System.out.println("\n--- APPLY FILTERS ---");
+
+    System.out.print("Filter by Game (leave blank to skip): ");
+    gamerGameFilter = scanner.nextLine().trim();
+
+    System.out.print("Filter by Genre (leave blank to skip): ");
+    gamerGenreFilter = scanner.nextLine().trim();
+
+    System.out.print("Filter by Max Age (leave blank to skip): ");
+    gamerAgeFilter = scanner.nextLine().trim();
+
+    System.out.println("Filters applied! Game: [" + gamerGameFilter + "], Genre: ["
+            + gamerGenreFilter + "], Max Age: [" + gamerAgeFilter + "]");
+}
+
+	private void startFindGamersQueue() {
+    List<User> recommendations = service.retrieveFriendRecommendations(currentUser);
+
+    if (recommendations == null || recommendations.isEmpty()) {
+        System.out.println("\nNo gamer recommendations found right now.");
+        return;
+    }
+
+    if (!gamerGameFilter.isEmpty()) {
+        recommendations = service.filterRecommendationsByGame(recommendations, gamerGameFilter);
+    }
+
+    if (!gamerGenreFilter.isEmpty()) {
+        recommendations = service.filterRecommendationsByGenre(recommendations, gamerGenreFilter);
+    }
+
+    if (!gamerAgeFilter.isEmpty()) {
+        try {
+            int maxAge = Integer.parseInt(gamerAgeFilter);
+            recommendations = recommendations.stream()
+                    .filter(user -> user.getAge() <= maxAge)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid age filter. Ignoring age filter.");
+        }
+    }
+
+    if (recommendations.isEmpty()) {
+        System.out.println("\nNo gamers matched your filters.");
+        return;
+    }
+
+    int index = 0;
+
+    while (index < recommendations.size()) {
+        User gamer = recommendations.get(index);
+
+        System.out.println("\n==============================");
+        System.out.println("GAMER RECOMMENDATION");
+        System.out.println("Username: " + gamer.getUsername());
+        System.out.println("Age: " + gamer.getAge());
+        System.out.println("Bio: " + gamer.getBio());
+        System.out.println("Favorite Games: " + gamer.getFavoriteGames());
+        System.out.println("Favorite Genres: " + gamer.getFavoriteGenres());
+        System.out.println("==============================");
+
+        System.out.println("1. Like / Send Friend Request");
+        System.out.println("2. Dislike / Skip");
+        System.out.println("3. Block User");
+        System.out.println("4. Exit Queue");
+        System.out.print("Action: ");
+
+        String action = scanner.nextLine().trim();
+
+        switch (action) {
+            case "1":
+                boolean sent = service.insertFriendRequest(currentUser.getUserID(), gamer.getUserID());
+                if (sent) {
+                    System.out.println("Friend request sent to " + gamer.getUsername() + "!");
+                } else {
+                    System.out.println("Could not send friend request.");
+                }
+                index++;
+                break;
+
+            case "2":
+                service.skipAccount(currentUser, gamer);
+                index++;
+                break;
+
+            case "3":
+                service.blockUser(gamer);
+                index++;
+                break;
+
+            case "4":
+                System.out.println("Exiting Find Gamers queue.");
+                return;
+
+            default:
+                System.out.println("Invalid option.");
+        }
+    }
+
+    System.out.println("\nNo more gamer recommendations.");
+}
+  
+   
+}
+
+	

@@ -43,4 +43,6 @@ public interface DBOperation {
     List<User> getOfflineFriends(int userID);
     boolean setUserOffline(int userID);
     boolean removeFriend(int currentUserId, int targetUserId);
+    List<User> getFriendRecommendations(int userID);
+    
 }
