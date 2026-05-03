@@ -1,5 +1,7 @@
 package src;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -8,11 +10,7 @@ import java.util.stream.Collectors;
 
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-
 import jakarta.mail.*;
-import jakarta.mail.internet.*;
-import java.util.Properties;
-import java.util.Scanner;
 
 public class Service {
 
@@ -70,7 +68,7 @@ public class Service {
         if (currentUser == null || userToBlock == null) {
             return;
         }
-        boolean success = dbOp.insertBlockedUser(currentUser.getUsername(), userToBlock.getUsername());
+        boolean success = dbOp.insertBlockedUser(currentUser.getUserID(), userToBlock.getUserID());
         if (success) {
             System.out.println("Blocked user: " + userToBlock.getUsername());
         }
@@ -154,15 +152,13 @@ public class Service {
         return dbOp.updatePostVotes(postId, isLike);
     }
 
-    // Add to Service.java
-public boolean insertComment(int postId, int authorId, String text) {
-    // Business logic: ensure the comment actually contains text
-    if (text == null || text.trim().isEmpty()) {
-        System.out.println("Error: Comment cannot be empty.");
-        return false;
+    public boolean insertComment(int postId, int authorId, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            System.out.println("Error: Comment cannot be empty.");
+            return false;
+        }
+        return dbOp.insertComment(postId, authorId, text);
     }
-    return dbOp.insertComment(postId, authorId, text);
-}
 
     public boolean updateCommentVotes(int commentId, boolean isLike) {
         return dbOp.updateCommentVotes(commentId, isLike);
@@ -194,17 +190,18 @@ public boolean insertComment(int postId, int authorId, String text) {
     }
 
     public List<User> retrieveMutualFriends(User user1, User user2) {
-        System.out.println("Retrieving mutual friends...");
-        return new ArrayList<>();
+        if (user1 == null || user2 == null) {
+            return new ArrayList<>();
+        }
+        return dbOp.getMutualFriends(user1.getUserID(), user2.getUserID());
     }
     
     public List<User> retrieveFriendRecommendations(User user) {
-    if (user == null || user.getUserID() <= 0) {
-        return new ArrayList<>();
+        if (user == null || user.getUserID() <= 0) {
+            return new ArrayList<>();
+        }
+        return dbOp.getFriendRecommendations(user.getUserID());
     }
-
-    return dbOp.getFriendRecommendations(user.getUserID());
-}
 
     public List<User> filterRecommendationsByAge(List<User> recommendations, int targetAge) {
         return recommendations.stream()
@@ -224,7 +221,7 @@ public boolean insertComment(int postId, int authorId, String text) {
                 .collect(Collectors.toList());
     }
 
-    public void sendEmailPingToFriend(User sender, User friend) {
+    public void sendEmailPingToFriend(User sender, User friend, String customMessage) {
         Properties config = new Properties();
         try (FileInputStream in = new FileInputStream("config.properties")) {
             config.load(in);
@@ -236,11 +233,6 @@ public boolean insertComment(int postId, int authorId, String text) {
 
         final String senderEmail = config.getProperty("email.address");
         final String appPassword = config.getProperty("email.password");
-
-        String customMessage = "";
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Type your message below (or press Enter to send the default message):");
-        customMessage = scanner.nextLine().trim();
 
         boolean isDefault = customMessage.isEmpty();
         String subject = isDefault
@@ -275,11 +267,6 @@ public boolean insertComment(int postId, int authorId, String text) {
             System.out.println("❌ Failed to send email.");
             e.printStackTrace();
         }
-            System.out.println("Ping! " + sender.getUsername() + " sent an email notification to " + friend.getUsername());
-        }
-
-    public void sendEmailPingToGroup(User sender, Group group) {
-        System.out.println("Ping! " + sender.getUsername() + " notified everyone in group ID: " + group.getGroupId());
     }
 
     public void searchCommunitiesByName(String nameQuery) {
@@ -295,43 +282,118 @@ public boolean insertComment(int postId, int authorId, String text) {
     }
 
     public boolean likePost(int postId, int userId) {
-    return dbOp.likePost(postId, userId); //
-}
+        return dbOp.likePost(postId, userId); 
+    }
 
-public boolean dislikePost(int postId, int userId) {
-    return dbOp.dislikePost(postId, userId); //
-}
+    public boolean dislikePost(int postId, int userId) {
+        return dbOp.dislikePost(postId, userId); 
+    }
 
-public boolean clearInteraction(int postId, int userId) {
-    return dbOp.clearInteraction(postId, userId); //
-}
+    public boolean clearInteraction(int postId, int userId) {
+        return dbOp.clearInteraction(postId, userId); 
+    }
 
-    // Helper to get fresh counts after a removal
     public Post getPostById(int postId) {
-        // Implement a simple SELECT * FROM POSTS WHERE POST_ID = ? in SQLOperation
         return dbOp.getPostById(postId); 
     }
+    
     public boolean likeComment(int commentId, int userId) {
-    return dbOp.likeComment(commentId, userId);
-}
+        return dbOp.likeComment(commentId, userId);
+    }
 
-public boolean dislikeComment(int commentId, int userId) {
-    return dbOp.dislikeComment(commentId, userId);
-}
+    public boolean dislikeComment(int commentId, int userId) {
+        return dbOp.dislikeComment(commentId, userId);
+    }
 
-public boolean clearCommentInteraction(int commentId, int userId) {
-    return dbOp.clearCommentInteraction(commentId, userId);
-}
+    public boolean clearCommentInteraction(int commentId, int userId) {
+        return dbOp.clearCommentInteraction(commentId, userId);
+    }
 
-public List<User> getOnlineFriends(int userID) {
-    return dbOp.getOnlineFriends(userID);
-}
+    public List<User> getOnlineFriends(int userID) {
+        return dbOp.getOnlineFriends(userID);
+    }
 
-public List<User> getOfflineFriends(int userID) {
-    return dbOp.getOfflineFriends(userID);
-}
-public boolean removeFriend(int currentUserId, int targetUserId) {
-        // Assuming your SQLOperation instance is named 'sqlOperation'
+    public List<User> getOfflineFriends(int userID) {
+        return dbOp.getOfflineFriends(userID);
+    }
+    
+    public boolean removeFriend(int currentUserId, int targetUserId) {
         return dbOp.removeFriend(currentUserId, targetUserId);
+    }
+    public Group createGroup(String groupName, User creator) {
+        return dbOp.createGroup(groupName, creator.getUserID());
+    }
+
+    public List<Group> getJoinedGroupsList(User user) {
+        return dbOp.getJoinedGroupsList(user.getUserID());
+    }
+
+    public boolean addFriendToGroup(int groupId, int friendId) {
+        return dbOp.insertGroupMember(groupId, friendId);
+    }
+
+    public boolean leaveGroup(int groupId, int userId) {
+        return dbOp.removeGroupMember(groupId, userId);
+    }
+
+    public void sendEmailPingToGroup(User sender, Group group, String customMessage) {
+        List<User> members = dbOp.getGroupMembers(group.getGroupId());
+        
+        if (members.size() <= 1) {
+            System.out.println("You are the only one in this group. Invite some friends first!");
+            return;
+        }
+
+        // 1. Load email config
+        Properties config = new Properties();
+        try (FileInputStream in = new FileInputStream("config.properties")) {
+            config.load(in);
+        } catch (IOException e) {
+            System.out.println("❌ Could not load email configuration.");
+            return;
+        }
+        final String senderEmail = config.getProperty("email.address");
+        final String appPassword = config.getProperty("email.password");
+
+        // 2. Setup Session
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+        Session session = Session.getInstance(props, new Authenticator() {
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(senderEmail, appPassword);
+            }
+        });
+
+        // 3. Setup message body
+        String subject = "Group Ping: " + group.getGroupName() + "!";
+        String body = customMessage.isEmpty() 
+            ? sender.getUsername() + " is looking to play with the group! Hop online!" 
+            : sender.getUsername() + " says: " + customMessage;
+
+        // 4. Send to everyone (except the sender)
+        int sentCount = 0;
+        for (User member : members) {
+            if (member.getUserID() == sender.getUserID() || member.getEmail() == null) continue;
+            
+            try {
+                Message message = new MimeMessage(session);
+                message.setFrom(new InternetAddress(senderEmail));
+                message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(member.getEmail()));
+                message.setSubject(subject);
+                message.setText(body);
+                Transport.send(message);
+                sentCount++;
+            } catch (MessagingException e) {
+                System.out.println("❌ Failed to send to " + member.getUsername());
+            }
+        }
+        System.out.println("✅ Group ping sent successfully to " + sentCount + " members!");
+    }
+
+    public List<User> getAllFriends(int userID) {
+        return dbOp.getAllFriends(userID);
     }
 }
