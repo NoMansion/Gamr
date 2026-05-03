@@ -516,7 +516,7 @@ public class SocialController {
                     char pingLetter = 'A';
                     for (User friend : allFriends) {
                         boolean isOnline = onlineFriendsList.contains(friend);
-                        String indicator = isOnline ? "🟢 Online" : "⚫ Offline";
+                        String indicator = isOnline ? "Online" : "Offline";
                         System.out.println(pingLetter + ". " + friend.getUsername() + " " + indicator);
                         pingLetter++;
                     }
@@ -540,7 +540,7 @@ public class SocialController {
                     }
 
                     if (selectedFriend == null) {
-                        System.out.println("❌ Friend not found.");
+                        System.out.println("Friend not found.");
                         break;
                     }
 
@@ -617,9 +617,9 @@ public class SocialController {
                     boolean isRemoved = service.removeFriend(currentUser.getUserID(), userToRemove.getUserID());
                     
                     if (isRemoved) {
-                        System.out.println("✅ Successfully removed " + removeTarget + " from your friends list.");
+                        System.out.println("Successfully removed " + removeTarget + " from your friends list.");
                     } else {
-                        System.out.println("❌ Failed to remove " + removeTarget + ". Are you sure you are friends?");
+                        System.out.println("Failed to remove " + removeTarget + ". Are you sure you are friends?");
                     }
                     break;
                 case "6":
@@ -684,14 +684,14 @@ public class SocialController {
                                                     .anyMatch(user -> user.getUsername().equalsIgnoreCase(friendName));
                                                     
                                             if (!isFriend) {
-                                                System.out.println("❌ You can only add users who are currently on your friends list.");
+                                                System.out.println("You can only add users who are currently on your friends list.");
                                                 break;
                                             }
 
                                             if (service.addFriendToGroup(selectedGroup.getGroupId(), f.getUserID())) {
-                                                System.out.println("✅ Added " + f.getUsername() + " to the group!");
+                                                System.out.println("Added " + f.getUsername() + " to the group!");
                                             } else {
-                                                System.out.println("❌ Could not add user (they might already be in the group).");
+                                                System.out.println("Could not add user (they might already be in the group).");
                                             }
                                         } else {
                                             System.out.println("User not found.");
@@ -699,10 +699,10 @@ public class SocialController {
                                         break;
                                     case "3":
                                         if (service.leaveGroup(selectedGroup.getGroupId(), currentUser.getUserID())) {
-                                            System.out.println("✅ You left " + selectedGroup.getGroupName() + ".");
+                                            System.out.println("You left " + selectedGroup.getGroupName() + ".");
                                             managingGroup = false; // Kick them back to the friends tab
                                         } else {
-                                            System.out.println("❌ Failed to leave group.");
+                                            System.out.println("Failed to leave group.");
                                         }
                                         break;
                                     case "4":
@@ -723,9 +723,9 @@ public class SocialController {
                     if (!newGroupName.isEmpty()) {
                         Group created = service.createGroup(newGroupName, currentUser);
                         if (created != null) {
-                            System.out.println("✅ Group '" + created.getGroupName() + "' created successfully!");
+                            System.out.println("Group '" + created.getGroupName() + "' created successfully!");
                         } else {
-                            System.out.println("❌ Failed to create group.");
+                            System.out.println("Failed to create group.");
                         }
                     } else {
                         System.out.println("Group name cannot be empty.");
