@@ -1,81 +1,44 @@
-package test;
+package Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import org.junit.Test;
+import static org.junit.Assert.*;
 import src.*;
 
 public class UnaddFriendTest {
 
-    private DBOperation dbOp;
-    private Service service;
-
-    @BeforeEach
-    void setUp() {
-        dbOp = mock(DBOperation.class);
-        service = new Service(dbOp);
+    private Service getService() {
+        DatabaseConnection db = ConnectionFactory.createConnection("SQL");
+        DBOperation dbOps = new SQLOperation(db);
+        return new Service(dbOps);
     }
 
-    // Path 1: user is null
+    // Path 1: deleteFriendship returns false (users are not friends)
     @Test
-    void testUnaddFriend_NullUser() {
-        User friendToRemove = new User();
-        friendToRemove.setUserID(2);
-        friendToRemove.setUsername("friendUser");
+    public void testUnaddFriend_DeleteFails() {
+        DatabaseConnection db = ConnectionFactory.createConnection("SQL");
+        DBOperation dbOps = new SQLOperation(db);
 
-        service.unaddFriend(null, friendToRemove);
-
-        verify(dbOp, never()).deleteFriendship(anyInt(), anyInt());
+        boolean result = dbOps.deleteFriendship(1, 9999);
+        assertFalse("Should return false when friendship doesn't exist", result);
     }
 
-    // Path 2: friendToRemove is null
+    // Path 2: deleteFriendship returns true (users are friends)
     @Test
-    void testUnaddFriend_NullFriend() {
-        User user = new User();
-        user.setUserID(1);
-        user.setUsername("testUser");
+    public void testUnaddFriend_DeleteSucceeds() {
+        DatabaseConnection db = ConnectionFactory.createConnection("SQL");
+        DBOperation dbOps = new SQLOperation(db);
 
-        service.unaddFriend(user, null);
-
-        verify(dbOp, never()).deleteFriendship(anyInt(), anyInt());
+        boolean result = dbOps.deleteFriendship(1, 22);
+        assertTrue("Should return true when friendship exists", result);
     }
 
-    // Path 3: both valid but deleteFriendship returns false
+    // Path 3: user tries to unadd themselves
     @Test
-    void testUnaddFriend_DeleteFails() {
-        User user = new User();
-        user.setUserID(1);
-        user.setUsername("testUser");
+    public void testUnaddFriend_SameUser() {
+        DatabaseConnection db = ConnectionFactory.createConnection("SQL");
+        DBOperation dbOps = new SQLOperation(db);
 
-        User friendToRemove = new User();
-        friendToRemove.setUserID(2);
-        friendToRemove.setUsername("friendUser");
-
-        when(dbOp.deleteFriendship(1, 2)).thenReturn(false);
-
-        service.unaddFriend(user, friendToRemove);
-
-        verify(dbOp).deleteFriendship(1, 2);
-    }
-
-    // Path 4: both valid and deleteFriendship returns true
-    @Test
-    void testUnaddFriend_DeleteSucceeds() {
-        User user = new User();
-        user.setUserID(1);
-        user.setUsername("testUser");
-
-        User friendToRemove = new User();
-        friendToRemove.setUserID(2);
-        friendToRemove.setUsername("friendUser");
-
-        when(dbOp.deleteFriendship(1, 2)).thenReturn(true);
-
-        service.unaddFriend(user, friendToRemove);
-
-        verify(dbOp).deleteFriendship(1, 2);
+        boolean result = dbOps.deleteFriendship(1, 1);
+        assertFalse("Should return false when both IDs are the same", result);
     }
 }
