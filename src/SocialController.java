@@ -711,7 +711,7 @@ public class SocialController {
                 System.out.println("Favorite Genres: " + currentUser.getFavoriteGenres());
                 break;
 
-            case "2":
+           case "2":
                 System.out.println("\n--- EDIT PROFILE ---");
 
                 System.out.print("New email (leave blank to keep current): ");
@@ -736,16 +736,27 @@ public class SocialController {
                     currentUser.setBio(newBio);
                 }
 
-                System.out.print("Add a favorite game (leave blank to skip): ");
-                String newGame = scanner.nextLine().trim();
-                if (!newGame.isEmpty()) {
-                    currentUser.getFavoriteGames().add(newGame);
+                // --- NEW GAMES/GENRES LOGIC ---
+                System.out.println("Current Games: " + currentUser.getFavoriteGames());
+                System.out.print("Enter new favorite games (comma-separated, leave blank to keep current): ");
+                String newGamesInput = scanner.nextLine().trim();
+                if (!newGamesInput.isEmpty()) {
+                    List<String> gamesList = Arrays.stream(newGamesInput.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toList());
+                    currentUser.setFavoriteGames(gamesList);
                 }
 
-                System.out.print("Add a favorite genre (leave blank to skip): ");
-                String newGenre = scanner.nextLine().trim();
-                if (!newGenre.isEmpty()) {
-                    currentUser.getFavoriteGenres().add(newGenre);
+                System.out.println("Current Genres: " + currentUser.getFavoriteGenres());
+                System.out.print("Enter new favorite genres (comma-separated, leave blank to keep current): ");
+                String newGenresInput = scanner.nextLine().trim();
+                if (!newGenresInput.isEmpty()) {
+                    List<String> genresList = Arrays.stream(newGenresInput.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .collect(Collectors.toList());
+                    currentUser.setFavoriteGenres(genresList);
                 }
 
                 boolean updated = service.updateUserProfile(currentUser);

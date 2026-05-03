@@ -510,15 +510,22 @@ public boolean updateCommentVotes(int commentID, boolean isLike) {
                     user.setPasswordHash(rs.getString("password_hash"));
                     user.setAge(rs.getInt("age"));
                     user.setBio(rs.getString("bio"));
+                    
+                    // FIXED: Making lists fully mutable and handling null/empty cases
                     String gamesRaw = rs.getString("favorite_games");
                     if (gamesRaw != null && !gamesRaw.trim().isEmpty()) {
-                        user.setFavoriteGames(Arrays.asList(gamesRaw.split("\\s*,\\s*")));
+                        user.setFavoriteGames(new ArrayList<>(Arrays.asList(gamesRaw.split("\\s*,\\s*"))));
+                    } else {
+                        user.setFavoriteGames(new ArrayList<>());
                     }
 
                     String genresRaw = rs.getString("favorite_genres");
                     if (genresRaw != null && !genresRaw.trim().isEmpty()) {
-                    user.setFavoriteGenres(Arrays.asList(genresRaw.split("\\s*,\\s*")));
+                        user.setFavoriteGenres(new ArrayList<>(Arrays.asList(genresRaw.split("\\s*,\\s*"))));
+                    } else {
+                        user.setFavoriteGenres(new ArrayList<>());
                     }
+                    
                     conn.createStatement().executeUpdate("UPDATE Users SET is_online = 1 WHERE user_id = " + user.getUserID());
                     return user; // Login successful
                 }

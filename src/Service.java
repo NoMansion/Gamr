@@ -1,5 +1,7 @@
 package src;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -238,10 +240,10 @@ public boolean insertComment(int postId, int authorId, String text) {
         final String appPassword = config.getProperty("email.password");
 
         String customMessage = "";
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Type your message below (or press Enter to send the default message):");
-        customMessage = scanner.nextLine().trim();
-
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Type your message below (or press Enter to send the default message):");
+            customMessage = scanner.nextLine().trim();
+        }
         boolean isDefault = customMessage.isEmpty();
         String subject = isDefault
             ? sender.getUsername() + " sent a ping!"
