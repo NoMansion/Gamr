@@ -1,3 +1,4 @@
+//Written by Sam Good
 package test;
 
 import org.junit.Test;
