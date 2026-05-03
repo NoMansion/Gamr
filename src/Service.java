@@ -396,4 +396,8 @@ public class Service {
     public List<User> getAllFriends(int userID) {
         return dbOp.getAllFriends(userID);
     }
+
+    public List<User> getGroupMembers(int groupId) {
+        return dbOp.getGroupMembers(groupId);
+    }
 }
